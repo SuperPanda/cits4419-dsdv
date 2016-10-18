@@ -1,7 +1,8 @@
 ## WARNING: Not yet tested
 declare -a experiment2 =("5" "10" "15")
 declare -a experiment3 =("0.4" "0.5" "0.6")
-
+declare -a speed =("1" "10" "20")
+declare -a cbrNodes =("10" "20" "30")
 echo "Starting experiment 1"
 echo "Starting simulation with unmodified DSDV protocol"
 # this runs unmodified-dsdv.cc and outputs to unmodifiedDSDV.dat instead 
