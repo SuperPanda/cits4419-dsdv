@@ -3,14 +3,14 @@ Modified code to experiment with the DSDV protocol for use with the ns-3 simulat
 ## Source code
 - unmodified-dsdv.cc
 - original-protocols/
--- TO ADD...
+  - TO ADD...
 ## Run experiments
 - experiment.sh will run all the simulations for all parameters and save the data
 ## Experiment 1
 - full-updates-only-dsdv.cc
 - modified-protocols/
--- full-updates-only-dsdv-protocol.cc
--- full-updates-only-dsdv-protocol.h
+  - full-updates-only-dsdv-protocol.cc
+  - full-updates-only-dsdv-protocol.h
 ## Experiment 2
 - disable-nodes-updating-dsdv.cc [number of non-updating nodes]
 ## Experiment 3
