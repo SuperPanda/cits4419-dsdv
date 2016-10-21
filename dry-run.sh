@@ -12,18 +12,18 @@ do
     echo "Starting simulation with unmodified DSDV protocol"
     # this runs unmodified-dsdv.cc and outputs to unmodifiedDSDV.dat instead 
     # of screen
-    ./../waf --run "unmodified-dsdv --cbr-nodes=${n} --node-speed=${s}" > unmodifiedDSDV.dat 2>&1
+    #./../waf --run "unmodified-dsdv" > unmodifiedDSDV.dat 2>&1
     # reads in a bunch of output from the simulation, and organises the data needed
     ## python parse-data.py -filein unmodifiedDSDV.dat > unmodifiedDSDV.stat
     # show the progress (update next line accordingly)
     ## tail -n 13 unmodifiedDSDV.dat
     ## cat unmodifiedDSDV.stat
-    ./../waf --run "full-updates-only-dsdv --cbr-nodes=${n} --node-speed=${s}" > fullUpdatesDSDV.dat 2>&1
+    #./../waf --run "full-updates-only-dsdv" > fullUpdatesDSDV.dat 2>&1
     echo "Starting experiment 2 with ${n} CBR nodes @ ${s}m/s"
     for i in "${experiment2[@]}"
     do
       echo "Experiment 2: disabled updating for ${i} nodes"
-      ./../waf --run "disable-nodes-updating-dsdv --num-disabled-nodes ${i} --cbr-nodes=${n} --node-speed=${s}" > disable-${i}-nodes-updating-dsdv.dat 2>&1
+      #./../waf --run "disable-nodes-updating-dsdv --num-disabled-nodes ${i}" > disable-${i}-nodes-updating-dsdv.dat 2>&1
       #python parse-data.py --filein disable-${i}-nodes-updating-dsdv.dat >  disable-${i}-nodes-updating-dsdv.stat
       #tail -n [num of relevant lines] [filename.dat]
     done
@@ -31,10 +31,10 @@ do
     for i in "${experiment3[@]}"
     do
       echo "Experiment 3: Ignore Route Table Column (probability ${i})"
-      ./../waf --run "ignore-routetable-column-dsdv --ignore-probability ${i} --cbr-nodes=${n} --node-speed=${s}" > ignore-${i}-routetable-column-dsdv.dat 2>&1
+      #./../waf --run "ignore-routetable-column-dsdv --ignore-probability ${i}" > ignore-${i}-routetable-column-dsdv.dat 2>&1
     done
     echo "Starting experiment 4 with ${n} CBR nodes @ ${s}m/s: Ignoring sequence numbers in DSDV"
-    ./../waf --run "ignore-sequence-number-dsdv --cbr-nodes=${n} --node-speed=${s}" > ignore-sequence-number-dsdv.dat 2>&1
+    #./../waf --run "ignore-sequence-number-dsdv" > ignore-sequence-number-dsdv.dat 2>&1
   done
 done
 echo "Done!"
