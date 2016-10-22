@@ -15,11 +15,12 @@ setOfNodeSpeeds = set([a1[1] for a1 in a])
 
 # Start plotting
 counter = 0
-combinations = ['ro', 'go', 'bo', 'rx', 'gx', 'bx']
+combinations = ['r-', 'g-', 'b-', 'ro', 'go', 'bo']
 plt.title('Experiment 1: Throughput of unmodified DSDV protocol')
 plt.xlabel('Number of nodes generating CBR traffic')
 plt.ylabel('Throughput (pkts rx / pkts tx)')
 plt.axis([0,35,0,1.0])
+leg = []
 for nodeSpeed in setOfNodeSpeeds:
   print(nodeSpeed)
   # add subplot for each node speed
@@ -29,7 +30,12 @@ for nodeSpeed in setOfNodeSpeeds:
     if nodeSpeed == item[1]:
       x.append(item[0])
       y.append(item[2])
-  plt.plot(x,y,combinations[counter%len(combinations)])
+  
+  lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s'
+  plt.plot(x,y,combinations[counter%len(combinations)],label=lab)
+  plt.plot(x,y,combinations[counter+3%len(combinations)])
   counter+=1
   print([x, y])
+#plt.legend(leg)
+plt.legend()
 plt.show()
