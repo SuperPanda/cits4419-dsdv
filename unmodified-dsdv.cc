@@ -38,7 +38,7 @@
 #include "ns3/dsdv-helper.h"
 #include <iostream>
 #include <cmath>
-
+#include "ns3/flow-monitor-module.h"
 using namespace ns3;
 
 uint16_t port = 9;
@@ -97,23 +97,23 @@ int main (int argc, char **argv)
   DsdvManetExperiment test;
   uint32_t nWifis = 50;
   uint32_t cbrNodes = 10;
-  double totalTime = 33.0;
+  double totalTime = 100.0;
   std::string rate ("1Mbps");
   std::string phyMode ("DsssRate11Mbps");
   uint32_t nodeSpeed = 10; // in m/s
   std::string appl = "all";
   uint32_t periodicUpdateInterval = 15;
   uint32_t settlingTime = 6;
-  double dataStart = 30.0;
+  double dataStart = 50.0;
   bool printRoutingTable = true;
   std::string CSVfileName = "DsdvManetExperiment.csv";
 
   CommandLine cmd;
-  cmd.AddValue ("nWifis", "Number of wifi nodes[Default:30]", nWifis);
+  cmd.AddValue ("nWifis", "Number of wifi nodes[Default:50]", nWifis);
   cmd.AddValue ("cbrNodes", "Number of wifi flows [Default:10]", cbrNodes);
   cmd.AddValue ("totalTime", "Total Simulation time[Default:100]", totalTime);
   cmd.AddValue ("phyMode", "Wifi Phy mode[Default:DsssRate11Mbps]", phyMode);
-  cmd.AddValue ("rate", "CBR traffic rate[Default:8kbps]", rate);
+  cmd.AddValue ("rate", "CBR traffic rate[Default:1Mbps]", rate);
   cmd.AddValue ("nodeSpeed", "Node speed in RandomWayPoint model[Default:10]", nodeSpeed);
   cmd.AddValue ("periodicUpdateInterval", "Periodic Interval Time[Default=15]", periodicUpdateInterval);
   cmd.AddValue ("settlingTime", "Settling Time before sending out an update for changed metric[Default=6]", settlingTime);
@@ -226,10 +226,32 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   std::cout << "\nStarting simulation for " << m_totalTime << " s ...\n";
 
-  CheckThroughput ();
+  CheckThroughput (); // Is this necessary?
+  
+  // Setup the flow monitor
+  Ptr<FlowMonitor> monitor;
+  FlowMonitorHelper flowHelper;
+  monitor = flowHelper.InstallAll();
 
   Simulator::Stop (Seconds (m_totalTime));
   Simulator::Run ();
+
+  monitor->CheckForLostPackets();
+
+  // Flow monitor stats
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
+  std::map<FlowId,FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
+  for (std::map<FlowId,FlowMonitor::FlowStats>::const_iterator iter = stats.begin(); iter != stats.end(); ++iter)
+  {
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(iter->first);
+
+    NS_LOG_UNCOND("Flow "<< iter->first << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")");
+    NS_LOG_UNCOND("Tx Packets:\t" << iter->second.txPackets);
+    NS_LOG_UNCOND("Rx Packets:\t" << iter->second.rxPackets);
+    //NS_LOG_UNCOND("Tx Bytes:\t" << iter->second.txBytes);
+    //NS_LOG_UNCOND("Rx Bytes:\t" << iter->second.rxBytes);
+    NS_LOG_UNCOND("Throughput " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
+    }
   Simulator::Destroy ();
 }
 
@@ -314,7 +336,7 @@ DsdvManetExperiment::InstallApplications ()
       Ptr<Socket> sink = SetupPacketReceive (sinkNodeAddress, sinkNode);
       // Setup CBR source
       if (clientNode == i) clientNode--; // Ensures that flow does not use same source and sink node
-      OnOffHelper onoff1 ("ns3::UdpSocketFactory", Address (InetSocketAddress (interfaces.GetAddress (clientNode), port)));
+      OnOffHelper onoff1 ("ns3::UdpSocketFactory", Address (InetSocketAddress (interfaces.GetAddress (i), port)));
       onoff1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
       onoff1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
       ApplicationContainer apps1 = onoff1.Install (nodes.Get (clientNode));
