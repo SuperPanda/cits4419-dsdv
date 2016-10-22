@@ -43,12 +43,12 @@ using namespace ns3;
 
 uint16_t port = 9;
 
-NS_LOG_COMPONENT_DEFINE ("DsdvManetExample");
+NS_LOG_COMPONENT_DEFINE ("DsdvManetExperiment");
 
-class DsdvManetExample
+class DsdvManetExperiment
 {
 public:
-  DsdvManetExample ();
+  DsdvManetExperiment ();
   void CaseRun (uint32_t nWifis,
                 uint32_t nSinks,
                 double totalTime,
@@ -94,23 +94,23 @@ private:
 
 int main (int argc, char **argv)
 {
-  DsdvManetExample test;
-  uint32_t nWifis = 30;
-  uint32_t nSinks = 10;
-  double totalTime = 100.0;
-  std::string rate ("8kbps");
+  DsdvManetExperiment test;
+  uint32_t nWifis = 50;
+  uint32_t cbrNodes = 10;
+  double totalTime = 33.0;
+  std::string rate ("1Mbps");
   std::string phyMode ("DsssRate11Mbps");
   uint32_t nodeSpeed = 10; // in m/s
   std::string appl = "all";
   uint32_t periodicUpdateInterval = 15;
   uint32_t settlingTime = 6;
-  double dataStart = 50.0;
+  double dataStart = 30.0;
   bool printRoutingTable = true;
-  std::string CSVfileName = "DsdvManetExample.csv";
+  std::string CSVfileName = "DsdvManetExperiment.csv";
 
   CommandLine cmd;
   cmd.AddValue ("nWifis", "Number of wifi nodes[Default:30]", nWifis);
-  cmd.AddValue ("nSinks", "Number of wifi sink nodes[Default:10]", nSinks);
+  cmd.AddValue ("cbrNodes", "Number of wifi flows [Default:10]", cbrNodes);
   cmd.AddValue ("totalTime", "Total Simulation time[Default:100]", totalTime);
   cmd.AddValue ("phyMode", "Wifi Phy mode[Default:DsssRate11Mbps]", phyMode);
   cmd.AddValue ("rate", "CBR traffic rate[Default:8kbps]", rate);
@@ -119,7 +119,7 @@ int main (int argc, char **argv)
   cmd.AddValue ("settlingTime", "Settling Time before sending out an update for changed metric[Default=6]", settlingTime);
   cmd.AddValue ("dataStart", "Time at which nodes start to transmit data[Default=50.0]", dataStart);
   cmd.AddValue ("printRoutingTable", "print routing table for nodes[Default:1]", printRoutingTable);
-  cmd.AddValue ("CSVfileName", "The name of the CSV output file name[Default:DsdvManetExample.csv]", CSVfileName);
+  cmd.AddValue ("CSVfileName", "The name of the CSV output file name[Default:DsdvManetExperiment.csv]", CSVfileName);
   cmd.Parse (argc, argv);
 
   std::ofstream out (CSVfileName.c_str ());
@@ -137,23 +137,23 @@ int main (int argc, char **argv)
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode", StringValue (phyMode));
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2000"));
 
-  test = DsdvManetExample ();
-  test.CaseRun (nWifis, nSinks, totalTime, rate, phyMode, nodeSpeed, periodicUpdateInterval,
+  test = DsdvManetExperiment ();
+  test.CaseRun (nWifis, cbrNodes, totalTime, rate, phyMode, nodeSpeed, periodicUpdateInterval,
                 settlingTime, dataStart, printRoutingTable, CSVfileName);
 
   return 0;
 }
 
-DsdvManetExample::DsdvManetExample ()
+DsdvManetExperiment::DsdvManetExperiment ()
   : bytesTotal (0),
     packetsReceived (0)
 {
 }
 
 void
-DsdvManetExample::ReceivePacket (Ptr <Socket> socket)
+DsdvManetExperiment::ReceivePacket (Ptr <Socket> socket)
 {
-  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << " Received one packet!");
+  //NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << " Received one packet!");
   Ptr <Packet> packet;
   while ((packet = socket->Recv ()))
     {
@@ -163,7 +163,7 @@ DsdvManetExample::ReceivePacket (Ptr <Socket> socket)
 }
 
 void
-DsdvManetExample::CheckThroughput ()
+DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
@@ -174,24 +174,24 @@ DsdvManetExample::CheckThroughput ()
 
   out.close ();
   packetsReceived = 0;
-  Simulator::Schedule (Seconds (1.0), &DsdvManetExample::CheckThroughput, this);
+  Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckThroughput, this);
 }
 
 Ptr <Socket>
-DsdvManetExample::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
+DsdvManetExperiment::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
 {
 
   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
   Ptr <Socket> sink = Socket::CreateSocket (node, tid);
   InetSocketAddress local = InetSocketAddress (addr, port);
   sink->Bind (local);
-  sink->SetRecvCallback (MakeCallback ( &DsdvManetExample::ReceivePacket, this));
+  sink->SetRecvCallback (MakeCallback ( &DsdvManetExperiment::ReceivePacket, this));
 
   return sink;
 }
 
 void
-DsdvManetExample::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, std::string rate,
+DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, std::string rate,
                            std::string phyMode, uint32_t nodeSpeed, uint32_t periodicUpdateInterval, uint32_t settlingTime,
                            double dataStart, bool printRoutes, std::string CSVfileName)
 {
@@ -234,7 +234,7 @@ DsdvManetExample::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, s
 }
 
 void
-DsdvManetExample::CreateNodes ()
+DsdvManetExperiment::CreateNodes ()
 {
   std::cout << "Creating " << (unsigned) m_nWifis << " nodes.\n";
   nodes.Create (m_nWifis);
@@ -242,13 +242,13 @@ DsdvManetExample::CreateNodes ()
 }
 
 void
-DsdvManetExample::SetupMobility ()
+DsdvManetExperiment::SetupMobility ()
 {
   MobilityHelper mobility;
   ObjectFactory pos;
   pos.SetTypeId ("ns3::RandomRectanglePositionAllocator");
-  pos.Set ("X", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=1000.0]"));
-  pos.Set ("Y", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=1000.0]"));
+  pos.Set ("X", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=1500.0]"));
+  pos.Set ("Y", StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=1500.0]"));
 
   std::ostringstream speedConstantRandomVariableStream;
   speedConstantRandomVariableStream << "ns3::ConstantRandomVariable[Constant="
@@ -263,7 +263,7 @@ DsdvManetExample::SetupMobility ()
 }
 
 void
-DsdvManetExample::CreateDevices (std::string tr_name)
+DsdvManetExperiment::CreateDevices (std::string tr_name)
 {
   WifiMacHelper wifiMac;
   wifiMac.SetType ("ns3::AdhocWifiMac");
@@ -284,7 +284,7 @@ DsdvManetExample::CreateDevices (std::string tr_name)
 }
 
 void
-DsdvManetExample::InstallInternetStack (std::string tr_name)
+DsdvManetExperiment::InstallInternetStack (std::string tr_name)
 {
   DsdvHelper dsdv;
   dsdv.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
@@ -303,31 +303,25 @@ DsdvManetExample::InstallInternetStack (std::string tr_name)
 }
 
 void
-DsdvManetExample::InstallApplications ()
+DsdvManetExperiment::InstallApplications ()
 {
+  uint32_t clientNode = m_nWifis - 1;
   for (uint32_t i = 0; i <= m_nSinks - 1; i++ )
     {
-      Ptr<Node> node = NodeList::GetNode (i);
-      Ipv4Address nodeAddress = node->GetObject<Ipv4> ()->GetAddress (1, 0).GetLocal ();
-      Ptr<Socket> sink = SetupPacketReceive (nodeAddress, node);
-    }
-
-  for (uint32_t clientNode = 0; clientNode <= m_nWifis - 1; clientNode++ )
-    {
-      for (uint32_t j = 0; j <= m_nSinks - 1; j++ )
-        {
-          OnOffHelper onoff1 ("ns3::UdpSocketFactory", Address (InetSocketAddress (interfaces.GetAddress (j), port)));
-          onoff1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
-          onoff1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
-
-          if (j != clientNode)
-            {
-              ApplicationContainer apps1 = onoff1.Install (nodes.Get (clientNode));
-              Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
-              apps1.Start (Seconds (var->GetValue (m_dataStart, m_dataStart + 1)));
-              apps1.Stop (Seconds (m_totalTime));
-            }
-        }
-    }
+      // Setup CBR sinks
+      Ptr<Node> sinkNode = NodeList::GetNode (i);
+      Ipv4Address sinkNodeAddress = sinkNode->GetObject<Ipv4> ()->GetAddress (1, 0).GetLocal ();
+      Ptr<Socket> sink = SetupPacketReceive (sinkNodeAddress, sinkNode);
+      // Setup CBR source
+      if (clientNode == i) clientNode--; // Ensures that flow does not use same source and sink node
+      OnOffHelper onoff1 ("ns3::UdpSocketFactory", Address (InetSocketAddress (interfaces.GetAddress (clientNode), port)));
+      onoff1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
+      onoff1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
+      ApplicationContainer apps1 = onoff1.Install (nodes.Get (clientNode));
+      Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
+      apps1.Start (Seconds (var->GetValue (m_dataStart, m_dataStart + 1)));
+      apps1.Stop (Seconds (m_totalTime));
+      clientNode--;
+  }
 }
 
