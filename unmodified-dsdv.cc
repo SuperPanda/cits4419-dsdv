@@ -1,33 +1,7 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/*
- * Copyright (c) 2010 Hemanth Narra
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation;
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- * Author: Hemanth Narra <hemanth@ittc.ku.com>
- *
- * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
- * Information and Telecommunication Technology Center (ITTC)
- * and Department of Electrical Engineering and Computer Science
- * The University of Kansas Lawrence, KS USA.
- *
- * Work supported in part by NSF FIND (Future Internet Design) Program
- * under grant CNS-0626918 (Postmodern Internet Architecture),
- * NSF grant CNS-1050226 (Multilayer Network Resilience Analysis and Experimentation on GENI),
- * US Department of Defense (DoD), and ITTC at The University of Kansas.
- */
+/**
+ * The source code modifies the ns3's dsdv manet example,
+ * which can be found under 'src/dsdv/examples/dsdv-manet.cc'
+ **/
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
@@ -42,7 +16,7 @@
 using namespace ns3;
 
 uint16_t port = 9;
-
+bool isVerbose = false;
 NS_LOG_COMPONENT_DEFINE ("DsdvManetExperiment");
 
 class DsdvManetExperiment
@@ -59,7 +33,7 @@ public:
                 uint32_t settlingTime,
                 double dataStart,
                 bool printRoutes,
-                std::string CSVfileName);
+                std::string statsFileName);
 
 private:
   uint32_t m_nWifis;
@@ -74,7 +48,7 @@ private:
   uint32_t bytesTotal;
   uint32_t packetsReceived;
   bool m_printRoutes;
-  std::string m_CSVfileName;
+  std::string m_statsFileName;
 
   NodeContainer nodes;
   NetDeviceContainer devices;
@@ -106,9 +80,10 @@ int main (int argc, char **argv)
   uint32_t settlingTime = 6;
   double dataStart = 50.0;
   bool printRoutingTable = true;
-  std::string CSVfileName = "DsdvManetExperiment.csv";
+  std::string statsFileName = "DsdvExperiment1-unmodified.stat";
 
   CommandLine cmd;
+  cmd.AddValue ("verbose", "Print trace and pcaps[Default:false]",isVerbose);
   cmd.AddValue ("nWifis", "Number of wifi nodes[Default:50]", nWifis);
   cmd.AddValue ("cbrNodes", "Number of wifi flows [Default:10]", cbrNodes);
   cmd.AddValue ("totalTime", "Total Simulation time[Default:100]", totalTime);
@@ -119,16 +94,16 @@ int main (int argc, char **argv)
   cmd.AddValue ("settlingTime", "Settling Time before sending out an update for changed metric[Default=6]", settlingTime);
   cmd.AddValue ("dataStart", "Time at which nodes start to transmit data[Default=50.0]", dataStart);
   cmd.AddValue ("printRoutingTable", "print routing table for nodes[Default:1]", printRoutingTable);
-  cmd.AddValue ("CSVfileName", "The name of the CSV output file name[Default:DsdvManetExperiment.csv]", CSVfileName);
+  cmd.AddValue ("statsFileName", "The name of the CSV output file name[Default:DsdvExperiment1-unmodified.stat]", statsFileName);
   cmd.Parse (argc, argv);
 
-  std::ofstream out (CSVfileName.c_str ());
-  out << "SimulationSecond," <<
-  "ReceiveRate," <<
-  "PacketsReceived," <<
-  "NumberOfSinks," <<
+  /*std::ofstream out (statsFileName.c_str ());
+  out << "cbrNodes," <<
+  "nodeSpeed," <<
+  "PacketsTx," <<
+  "PacketsRx" <<
   std::endl;
-  out.close ();
+  out.close ();*/
 
   SeedManager::SetSeed (12345);
 
@@ -139,7 +114,7 @@ int main (int argc, char **argv)
 
   test = DsdvManetExperiment ();
   test.CaseRun (nWifis, cbrNodes, totalTime, rate, phyMode, nodeSpeed, periodicUpdateInterval,
-                settlingTime, dataStart, printRoutingTable, CSVfileName);
+                settlingTime, dataStart, printRoutingTable, statsFileName);
 
   return 0;
 }
@@ -167,8 +142,8 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
-
-  std::ofstream out (m_CSVfileName.c_str (), std::ios::app);
+ 
+  std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
   out << (Simulator::Now ()).GetSeconds () << "," << kbs << "," << packetsReceived << "," << m_nSinks << std::endl;
 
@@ -193,7 +168,7 @@ DsdvManetExperiment::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
 void
 DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, std::string rate,
                            std::string phyMode, uint32_t nodeSpeed, uint32_t periodicUpdateInterval, uint32_t settlingTime,
-                           double dataStart, bool printRoutes, std::string CSVfileName)
+                           double dataStart, bool printRoutes, std::string statsFileName)
 {
   m_nWifis = nWifis;
   m_nSinks = nSinks;
@@ -205,8 +180,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   m_settlingTime = settlingTime;
   m_dataStart = dataStart;
   m_printRoutes = printRoutes;
-  m_CSVfileName = CSVfileName;
-
+  m_statsFileName = statsFileName;
+  
   std::stringstream ss;
   ss << m_nWifis;
   std::string t_nodes = ss.str ();
@@ -238,6 +213,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   monitor->CheckForLostPackets();
 
+  int nRxPkts = 0;
+  int nTxPkts = 0;
   // Flow monitor stats
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
   std::map<FlowId,FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
@@ -246,12 +223,26 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(iter->first);
 
     NS_LOG_UNCOND("Flow "<< iter->first << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")");
+    nTxPkts += iter->second.txPackets;
+    nRxPkts += iter->second.rxPackets;
     NS_LOG_UNCOND("Tx Packets:\t" << iter->second.txPackets);
     NS_LOG_UNCOND("Rx Packets:\t" << iter->second.rxPackets);
     //NS_LOG_UNCOND("Tx Bytes:\t" << iter->second.txBytes);
     //NS_LOG_UNCOND("Rx Bytes:\t" << iter->second.rxBytes);
     NS_LOG_UNCOND("Throughput " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
     }
+  if (nTxPkts == 0) {nTxPkts = 1; nRxPkts = 0;} // stop divide by zero errors
+  NS_LOG_UNCOND("Total received: " << nRxPkts << "/" << nTxPkts << " (" << (((float) nRxPkts / (float) nTxPkts)*100.0) << "%)");
+  std::ofstream out (statsFileName.c_str ());
+  out << "cbrNodes,nodeSpeed,throughput" << std::endl;
+  out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
+  /*out << "cbrNodes: " << nSinks << std::endl;
+  out << "nodeSpeed: " << nodeSpeed << std::endl;
+  //out << "totalPacketTx: " << nTxPkts << std::endl;
+  //out << "totalPacketRx: " << nRxPkts << std::endl;
+  out << "throughput: " << ((float) nRxPkts / (float) nTxPkts)  << endl;
+  */
+  out.close ();
   Simulator::Destroy ();
 }
 
@@ -278,7 +269,7 @@ DsdvManetExperiment::SetupMobility ()
                                    << "]";
 
   Ptr <PositionAllocator> taPositionAlloc = pos.Create ()->GetObject <PositionAllocator> ();
- mobility.SetMobilityModel ("ns3::RandomWaypointMobilityModel", "Speed", StringValue (speedConstantRandomVariableStream.str ()),
+  mobility.SetMobilityModel ("ns3::RandomWaypointMobilityModel", "Speed", StringValue (speedConstantRandomVariableStream.str ()),
                              "Pause", StringValue ("ns3::ConstantRandomVariable[Constant=2.0]"), "PositionAllocator", PointerValue (taPositionAlloc));
   mobility.SetPositionAllocator (taPositionAlloc);
   mobility.Install (nodes);
@@ -299,10 +290,11 @@ DsdvManetExperiment::CreateDevices (std::string tr_name)
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue (m_phyMode), "ControlMode",
                                 StringValue (m_phyMode));
   devices = wifi.Install (wifiPhy, wifiMac, nodes);
-
-  AsciiTraceHelper ascii;
-  wifiPhy.EnableAsciiAll (ascii.CreateFileStream (tr_name + ".tr"));
-  wifiPhy.EnablePcapAll (tr_name);
+  if (isVerbose){
+    AsciiTraceHelper ascii;
+    wifiPhy.EnableAsciiAll (ascii.CreateFileStream (tr_name + ".tr"));
+    wifiPhy.EnablePcapAll (tr_name);
+  }
 }
 
 void
@@ -336,6 +328,7 @@ DsdvManetExperiment::InstallApplications ()
       Ptr<Socket> sink = SetupPacketReceive (sinkNodeAddress, sinkNode);
       // Setup CBR source
       if (clientNode == i) clientNode--; // Ensures that flow does not use same source and sink node
+      // The OnOff application generates traffic to a destination
       OnOffHelper onoff1 ("ns3::UdpSocketFactory", Address (InetSocketAddress (interfaces.GetAddress (i), port)));
       onoff1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
       onoff1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
