@@ -97,13 +97,6 @@ int main (int argc, char **argv)
   cmd.AddValue ("statsFileName", "The name of the CSV output file name[Default:DsdvExperiment1-unmodified.stat]", statsFileName);
   cmd.Parse (argc, argv);
 
-  /*std::ofstream out (statsFileName.c_str ());
-  out << "cbrNodes," <<
-  "nodeSpeed," <<
-  "PacketsTx," <<
-  "PacketsRx" <<
-  std::endl;
-  out.close ();*/
 
   SeedManager::SetSeed (12345);
 
@@ -142,12 +135,13 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
- 
-  std::ofstream out (m_statsFileName.c_str (), std::ios::app);
+  if (isVerbose){
+    std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
-  out << (Simulator::Now ()).GetSeconds () << "," << kbs << "," << packetsReceived << "," << m_nSinks << std::endl;
+    out << (Simulator::Now ()).GetSeconds () << "," << kbs << "," << packetsReceived << "," << m_nSinks << std::endl;
 
-  out.close ();
+    out.close ();
+  }
   packetsReceived = 0;
   Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckThroughput, this);
 }
@@ -236,12 +230,6 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   std::ofstream out (statsFileName.c_str ());
   out << "cbrNodes,nodeSpeed,throughput" << std::endl;
   out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
-  /*out << "cbrNodes: " << nSinks << std::endl;
-  out << "nodeSpeed: " << nodeSpeed << std::endl;
-  //out << "totalPacketTx: " << nTxPkts << std::endl;
-  //out << "totalPacketRx: " << nRxPkts << std::endl;
-  out << "throughput: " << ((float) nRxPkts / (float) nTxPkts)  << endl;
-  */
   out.close ();
   Simulator::Destroy ();
 }
