@@ -17,7 +17,7 @@ do
     for i in "${experiment2[@]}"
     do
       echo "Experiment 2 [incomplete]: disabled updating for ${i} nodes"
-      ./../waf --run "disable-nodes-updating-dsdv --num-disabled-nodes ${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+      ./../waf --run "disable-nodes-updating-dsdv --nDisabledNodes ${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     done
     #echo "Starting experiment 3 with ${n} CBR nodes @ ${s}m/s"
     for i in "${experiment3[@]}"
