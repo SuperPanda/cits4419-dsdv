@@ -42,7 +42,7 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("FullUpdateDsdvRoutingProtocol");
+NS_LOG_COMPONENT_DEFINE ("SkeletonDsdvRoutingProtocol");
   
 namespace dsdv {
   
@@ -798,7 +798,7 @@ RoutingProtocol::SendTriggeredUpdate ()
                                         << " SeqNo:" << i->second.GetSeqNo () << " HopCount:"
                                         << i->second.GetHop () + 1);
           RoutingTableEntry temp = i->second;
-          if ((i->second.GetEntriesChanged () == true) && (!m_advRoutingTable.AnyRunningEvent (temp.GetDestination ())))
+          if (!m_advRoutingTable.AnyRunningEvent (temp.GetDestination ()))
             {
               dsdvHeader.SetDst (i->second.GetDestination ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo ());

@@ -10,14 +10,14 @@ do
   do
     echo "Starting experiment 1 with ${n} CBR nodes @ ${s}m/s"
     echo "Starting simulation with unmodified DSDV protocol"
-    ./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
-    echo "Experiment 1 full updates is incomplete"
-    #./../waf --run "full-updates-only-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    #./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    echo "Experiment 1 full updates"
+    #./../waf --run "full-updates-dsdv-experiment1 --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     echo "Starting experiment 2 with ${n} CBR nodes @ ${s}m/s"
     for i in "${experiment2[@]}"
     do
       echo "Experiment 2 [incomplete]: disabled updating for ${i} nodes"
-      #./../waf --run "disable-nodes-updating-dsdv --num-disabled-nodes ${i} --cbrNodes=${n} --nodeSpeed=${s}" > disable-${i}-nodes-updating-dsdv.dat 2>&1
+      ./../waf --run "disable-nodes-updating-dsdv --num-disabled-nodes ${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     done
     #echo "Starting experiment 3 with ${n} CBR nodes @ ${s}m/s"
     for i in "${experiment3[@]}"
