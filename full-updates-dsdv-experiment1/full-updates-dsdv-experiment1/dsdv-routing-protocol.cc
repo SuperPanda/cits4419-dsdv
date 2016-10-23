@@ -42,7 +42,7 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("FullUpdateDsdvRoutingProtocol");
+NS_LOG_COMPONENT_DEFINE ("SkeletonDsdvRoutingProtocol");
   
 namespace dsdv {
   
@@ -779,13 +779,28 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
 }
 
 
-
 void
 RoutingProtocol::SendTriggeredUpdate ()
 {
   NS_LOG_FUNCTION (m_mainAddress << " is sending a triggered update");
-  std::map<Ipv4Address, RoutingTableEntry> allRoutes;
-  m_advRoutingTable.GetListOfAllRoutes (allRoutes);
+  std::map<Ipv4Address, RoutingTableEntry> allRoutes, allAdvRoutes;
+  m_routingTable.GetListOfAllRoutes (allRoutes);
+  // Check for changes to advertise table
+  // Don't send if nothing has changed
+  m_advRoutingTable.GetListOfAllRoutes(allAdvRoutes);
+  if ((allAdvRoutes.empty()) == false){
+    bool hasChanged = false;
+    for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allAdvRoutes.begin(); i != allAdvRoutes.end(); ++i){
+      if (i->second.GetEntriesChanged()== true){
+        hasChanged = true;
+        break;
+      }
+    }
+    if (!hasChanged) return;
+  } else {
+    return;
+  }
+
   for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator j = m_socketAddresses.begin (); j
        != m_socketAddresses.end (); ++j)
     {
@@ -799,7 +814,6 @@ RoutingProtocol::SendTriggeredUpdate ()
                                         << " SeqNo:" << i->second.GetSeqNo () << " HopCount:"
                                         << i->second.GetHop () + 1);
           RoutingTableEntry temp = i->second;
-          // Removed check that filters out unmodified entries (thereby making it a full update)
           if (!m_advRoutingTable.AnyRunningEvent (temp.GetDestination ()))
             {
               dsdvHeader.SetDst (i->second.GetDestination ());

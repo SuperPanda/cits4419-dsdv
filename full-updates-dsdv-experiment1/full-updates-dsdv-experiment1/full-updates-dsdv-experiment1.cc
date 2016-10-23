@@ -135,6 +135,7 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
+  NS_LOG_UNCOND("Time: " << (Simulator::Now()).GetSeconds() << "s");
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
