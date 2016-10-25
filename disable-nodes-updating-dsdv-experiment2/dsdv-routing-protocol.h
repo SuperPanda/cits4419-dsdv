@@ -82,7 +82,8 @@ public:
   bool GetWSTFlag () const;
   void SetEnableRAFlag (bool f);
   bool GetEnableRAFlag () const;
-
+  void SetDisableUpdateFlag (bool f);
+  bool GetDisableUpdateFlag() const;
  /**
   * Assign a fixed random variable stream number to the random variables
   * used by this model.  Return the number of streams (possibly zero) that
@@ -118,6 +119,8 @@ private:
   RoutingTable m_routingTable;
   /// Advertised Routing table for the node
   RoutingTable m_advRoutingTable;
+  /// This flag disables the sending of DSDV updates
+  bool DisableUpdates;
   /// The maximum number of packets that we allow a routing protocol to buffer.
   uint32_t m_maxQueueLen;
   /// The maximum number of packets that we allow per destination to buffer.

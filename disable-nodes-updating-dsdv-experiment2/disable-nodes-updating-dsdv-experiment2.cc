@@ -33,7 +33,7 @@ public:
                 uint32_t settlingTime,
                 double dataStart,
                 bool printRoutes,
-                std::string statsFileName);
+                std::string statsFileName, uint32_t silentNodes);
 
 private:
   uint32_t m_nWifis;
@@ -49,6 +49,8 @@ private:
   uint32_t packetsReceived;
   bool m_printRoutes;
   std::string m_statsFileName;
+  // Added number of silent nodes
+  uint32_t m_nSilentNodes;
 
   NodeContainer nodes;
   NetDeviceContainer devices;
@@ -82,10 +84,13 @@ int main (int argc, char **argv)
   bool printRoutingTable = true;
   std::string statsFileName = "SkeletonDsdvExperiment-unmodified.stat";
 
+  uint32_t silentNodes = 0;
+
   CommandLine cmd;
   cmd.AddValue ("verbose", "Print trace and pcaps[Default:false]",isVerbose);
   cmd.AddValue ("nWifis", "Number of wifi nodes[Default:50]", nWifis);
   cmd.AddValue ("cbrNodes", "Number of wifi flows [Default:10]", cbrNodes);
+  cmd.AddValue ("silentNodes", "Number of non-updating nodes [Default:0]", silentNodes);
   cmd.AddValue ("totalTime", "Total Simulation time[Default:100]", totalTime);
   cmd.AddValue ("phyMode", "Wifi Phy mode[Default:DsssRate11Mbps]", phyMode);
   cmd.AddValue ("rate", "CBR traffic rate[Default:1Mbps]", rate);
@@ -107,7 +112,7 @@ int main (int argc, char **argv)
 
   test = DsdvManetExperiment ();
   test.CaseRun (nWifis, cbrNodes, totalTime, rate, phyMode, nodeSpeed, periodicUpdateInterval,
-                settlingTime, dataStart, printRoutingTable, statsFileName);
+                settlingTime, dataStart, printRoutingTable, statsFileName, silentNodes);
 
   return 0;
 }
@@ -135,6 +140,7 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
+  NS_LOG_UNCOND("Time: " << (Simulator::Now()).GetSeconds());
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
@@ -162,7 +168,7 @@ DsdvManetExperiment::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
 void
 DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, std::string rate,
                            std::string phyMode, uint32_t nodeSpeed, uint32_t periodicUpdateInterval, uint32_t settlingTime,
-                           double dataStart, bool printRoutes, std::string statsFileName)
+                           double dataStart, bool printRoutes, std::string statsFileName, uint32_t silentNodes)
 {
   m_nWifis = nWifis;
   m_nSinks = nSinks;
@@ -173,9 +179,10 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   m_periodicUpdateInterval = periodicUpdateInterval;
   m_settlingTime = settlingTime;
   m_dataStart = dataStart;
-  m_printRoutes = printRoutes;
+  printRoutes = printRoutes;
   m_statsFileName = statsFileName;
-  
+  m_nSilentNodes = silentNodes;
+
   std::stringstream ss;
   ss << m_nWifis;
   std::string t_nodes = ss.str ();
@@ -185,7 +192,7 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   std::string sTotalTime = ss3.str ();
 
   std::string tr_name = "Dsdv_Manet_" + t_nodes + "Nodes_" + sTotalTime + "SimTime";
-  std::cout << "Trace file generated is " << tr_name << ".tr\n";
+  if (isVerbose) std::cout << "Trace file generated is " << tr_name << ".tr\n";
 
   CreateNodes ();
   CreateDevices (tr_name);
@@ -221,15 +228,13 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
     nRxPkts += iter->second.rxPackets;
     NS_LOG_UNCOND("Tx Packets:\t" << iter->second.txPackets);
     NS_LOG_UNCOND("Rx Packets:\t" << iter->second.rxPackets);
-    //NS_LOG_UNCOND("Tx Bytes:\t" << iter->second.txBytes);
-    //NS_LOG_UNCOND("Rx Bytes:\t" << iter->second.rxBytes);
     NS_LOG_UNCOND("Throughput " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
     }
   if (nTxPkts == 0) {nTxPkts = 1; nRxPkts = 0;} // stop divide by zero errors
   NS_LOG_UNCOND("Total received: " << nRxPkts << "/" << nTxPkts << " (" << (((float) nRxPkts / (float) nTxPkts)*100.0) << "%)");
   std::ofstream out (statsFileName.c_str ());
-  out << "cbrNodes,nodeSpeed,throughput" << std::endl;
-  out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
+  out << "silentNodes,cbrNodes,nodeSpeed,throughput" << std::endl;
+  out << silentNodes << "," << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
   out.close ();
   Simulator::Destroy ();
 }
@@ -288,13 +293,78 @@ DsdvManetExperiment::CreateDevices (std::string tr_name)
 void
 DsdvManetExperiment::InstallInternetStack (std::string tr_name)
 {
+  // Configuration of Network Stack for nodes with updating
   DsdvHelper dsdv;
   dsdv.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
   dsdv.Set ("SettlingTime", TimeValue (Seconds (m_settlingTime)));
+  dsdv.Set("DisableUpdates",BooleanValue(true));
+
   InternetStackHelper stack;
-  stack.SetRoutingHelper (dsdv); // has effect on the next Install ()
-  stack.Install (nodes);
+  stack.SetRoutingHelper (dsdv); // has effect on the next Install () -- MODIFICATION: so we duplicated stack so it is not changed
+ 
+  // Configuration of Network stack for nodes with no updating
+  DsdvHelper dsdv2;
+  dsdv2.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
+  dsdv2.Set ("SettlingTime", TimeValue (Seconds (m_settlingTime)));
+  dsdv2.Set("DisableUpdates",BooleanValue(false));
+
+  InternetStackHelper stack2;
+  stack2.SetRoutingHelper (dsdv2); 
+
+
   Ipv4AddressHelper address;
+
+  // We need to not bias the disabled nodes to be CBR traffic generating nodes
+  std::vector<uint32_t> numVector;
+  std::cout << m_nWifis << std::endl;
+  for (uint32_t i = 0; i < m_nWifis; i++)
+  {
+    numVector.push_back(i);
+  }
+  std::random_shuffle(numVector.begin(),numVector.end());
+
+  uint32_t nAllocatedSilentNodes = 0;
+  for (uint32_t i = 0; i < m_nWifis; i++){
+    int idx = numVector.at(i);
+    if (nAllocatedSilentNodes < m_nSilentNodes)
+    {
+      std::cout << "Node #" << numVector.at(i) << " is not sending updates\n";
+      stack.Install(nodes.Get(idx));
+      nAllocatedSilentNodes++;
+    }
+    else 
+    {
+      stack2.Install(nodes.Get(idx)); 
+    }
+  }
+  std::cout << std::endl;
+
+
+  /** 
+    * Preference for listeners of the CBR traffic to send ignore updates
+    * - To prefer CBR sources to ignore updates, start at loop a m_nWifis - 1, and loop downwards
+    * - This allows us to measure if ignore update activity is more important for generators of traffic
+    *     and consumers of traffic
+    **/
+
+  /*
+  // Based on the idea that sometimes nodes won't send updates to save on energy (the node is being greedy)...
+  // We allow the disable update flag to be applied in same order as nodes that generate traffic.
+  dsdv.Set("DisableUpdates",BooleanValue(true));
+  stack.SetRoutingHelper (dsdv); // has effect on the next Install ()
+  for (uint32_t i = 0; i < m_nSilentNodes; i++){
+    stack.Install(nodes.Get(i));
+  }
+    for (uint32_t i = m_nSilentNodes; i < m_nWifis; i++){
+    stack2.Install(nodes.Get(i));
+  }
+  */
+  
+  // for the first nSilentNodes
+  // iterate over nodes and install stack to nSilentNodes nodes
+  // for 
+  //stack.Install (nodes);
+ 
   address.SetBase ("10.1.1.0", "255.255.255.0");
   interfaces = address.Assign (devices);
   if (m_printRoutes)

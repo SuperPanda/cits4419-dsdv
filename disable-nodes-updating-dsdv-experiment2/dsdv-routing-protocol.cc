@@ -112,8 +112,6 @@ RoutingProtocol::GetTypeId (void)
     .SetParent<Ipv4RoutingProtocol> ()
     .SetGroupName ("Dsdv")
     .AddConstructor<RoutingProtocol> ()
-    //.AddAttribute("DisableUpdate","Turn off transmission of DSDV routing updates",MakeBooleanAccessor(&RoutingProtocol::SetRouteUpdateFlag, &RoutingProtocol::GetRouteFlaag, BooleanValue(false), ,MakeBooleanChecker())")
-    
     .AddAttribute ("PeriodicUpdateInterval","Periodic interval between exchange of full routing tables among nodes. ",
                    TimeValue (Seconds (15)),
                    MakeTimeAccessor (&RoutingProtocol::m_periodicUpdateInterval),
@@ -161,8 +159,23 @@ RoutingProtocol::GetTypeId (void)
     .AddAttribute ("RouteAggregationTime","Time to aggregate updates before sending them out (in seconds)",
                    TimeValue (Seconds (1)),
                    MakeTimeAccessor (&RoutingProtocol::m_routeAggregationTime),
-                   MakeTimeChecker ());
+                   MakeTimeChecker ())
+    .AddAttribute ("DisableUpdates","Disables DSDV routing table transmissions",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RoutingProtocol::SetDisableUpdateFlag,
+                                        &RoutingProtocol::GetDisableUpdateFlag),
+                   MakeBooleanChecker ());
   return tid;
+}
+
+void
+RoutingProtocol::SetDisableUpdateFlag (bool f){
+  DisableUpdates = f;
+}
+
+bool
+RoutingProtocol::GetDisableUpdateFlag() const{
+  return DisableUpdates;
 }
 
 void
@@ -175,17 +188,6 @@ RoutingProtocol::GetEnableBufferFlag () const
 {
   return EnableBuffering;
 }
-// Added accessor
-void
-RoutingProtocol::SetRouteUpdateFlag (bool f)
-{
-  DisableRouteUpdate = f;
-}
-bool
-RoutingProtocol::GetRouteUpdateFlag(){
-return DisableRouteUpdate;
-}
-//
 void
 RoutingProtocol::SetWSTFlag (bool f)
 {
@@ -244,7 +246,7 @@ RoutingProtocol::DoDispose ()
 void
 RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
-  *stream->GetStream () << "BEARNode: " << m_ipv4->GetObject<Node> ()->GetId ()
+  *stream->GetStream () << (DisableUpdates ? "[No Update] " : "") << "Node: " << m_ipv4->GetObject<Node> ()->GetId ()
                         << ", Time: " << Now().As (Time::S)
                         << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
                         << ", DSDV Routing table" << std::endl;
@@ -256,7 +258,6 @@ RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 void
 RoutingProtocol::Start ()
 {
-  
   m_queue.SetMaxPacketsPerDst (m_maxQueuedPacketsPerDst);
   m_queue.SetMaxQueueLen (m_maxQueueLen);
   m_queue.SetQueueTimeout (m_maxQueueTime);
@@ -855,7 +856,9 @@ RoutingProtocol::SendTriggeredUpdate ()
             {
               destination = iface.GetBroadcast ();
             }
-          socket->SendTo (packet, 0, InetSocketAddress (destination, DSDV_PORT));
+          if (!GetDisableUpdateFlag()){
+	          socket->SendTo (packet, 0, InetSocketAddress (destination, DSDV_PORT));
+	  }
           NS_LOG_FUNCTION ("Sent Triggered Update from "
                            << dsdvHeader.GetDst ()
                            << " with packet id : " << packet->GetUid () << " and packet Size: " << packet->GetSize ());
@@ -924,7 +927,10 @@ RoutingProtocol::SendPeriodicUpdate ()
                                                                       << " SeqNo:" << removedHeader.GetDstSeqno ()
                                                                       << " HopCount:" << removedHeader.GetHopCount ());
         }
-      socket->Send (packet);
+      // Added: Check for disable update flag
+      if (!GetDisableUpdateFlag()){
+        socket->Send (packet);
+      }
       // Send to all-hosts broadcast if on /32 addr, subnet-directed otherwise
       Ipv4Address destination;
       if (iface.GetMask () == Ipv4Mask::GetOnes ())
@@ -935,7 +941,10 @@ RoutingProtocol::SendPeriodicUpdate ()
         {
           destination = iface.GetBroadcast ();
         }
-      socket->SendTo (packet, 0, InetSocketAddress (destination, DSDV_PORT));
+      if (!GetDisableUpdateFlag())
+      {
+        socket->SendTo (packet, 0, InetSocketAddress (destination, DSDV_PORT));
+      }
       NS_LOG_FUNCTION ("PeriodicUpdate Packet UID is : " << packet->GetUid ());
     }
   m_periodicUpdateTimer.Schedule (m_periodicUpdateInterval + MicroSeconds (25 * m_uniformRandomVariable->GetInteger (0,1000)));
