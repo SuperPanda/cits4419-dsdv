@@ -29,7 +29,7 @@
  * NSF grant CNS-1050226 (Multilayer Network Resilience Analysis and Experimentation on GENI),
  * US Department of Defense (DoD), and ITTC at The University of Kansas.
  */
-
+#include <string>
 #include "dsdv-routing-protocol.h"
 #include "ns3/log.h"
 #include "ns3/inet-socket-address.h"
@@ -54,6 +54,7 @@ const uint32_t RoutingProtocol::DSDV_PORT = 269;
 /// Tag used by DSDV implementation
 struct DeferredRouteOutputTag : public Tag
 {
+  //char ip = oss2.str();
   /// Positive if output device is fixed in RouteOutput
   int32_t oif;
 
@@ -159,7 +160,11 @@ RoutingProtocol::GetTypeId (void)
     .AddAttribute ("RouteAggregationTime","Time to aggregate updates before sending them out (in seconds)",
                    TimeValue (Seconds (1)),
                    MakeTimeAccessor (&RoutingProtocol::m_routeAggregationTime),
-                   MakeTimeChecker ());
+                   MakeTimeChecker ())
+    .AddAttribute ("IgnoreColumn","Routing Table Entry to ignore", 
+                  IntegerValue(-1),
+                  MakeIntegerAccessor (&RoutingProtocol::m_ignoreColumn),
+                  MakeIntegerChecker<int32_t> ());
   return tid;
 }
 
@@ -231,11 +236,16 @@ RoutingProtocol::DoDispose ()
 void
 RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
-  *stream->GetStream () << "BEARNode: " << m_ipv4->GetObject<Node> ()->GetId ()
+  // Makes the Ip address for the ignore column
+  
+  std::ostringstream oss; if (m_ignoreColumn != -1){  oss << "10.1.1." << (m_ignoreColumn+1); } 
+  
+
+  *stream->GetStream () << "Ignoring [" << (m_ignoreColumn != -1 ? oss.str() : "n/a" ) << "] Node: " << m_ipv4->GetObject<Node> ()->GetId ()
                         << ", Time: " << Now().As (Time::S)
                         << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
                         << ", DSDV Routing table" << std::endl;
-
+  
   m_routingTable.Print (stream);
   *stream->GetStream () << std::endl;
 }
@@ -286,6 +296,9 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
     {
       rmItr->second.SetEntriesChanged (true);
       rmItr->second.SetSeqNo (rmItr->second.GetSeqNo () + 1);
+      // CHECK IF FILTERED OR NOT
+      //
+      //
       m_advRoutingTable.AddRoute (rmItr->second);
     }
   if (!removedAddresses.empty ())
@@ -602,9 +615,28 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                 m_settlingTime, /*entries changed*/
                 true);
               newEntry.SetFlag (VALID);
-              m_routingTable.AddRoute (newEntry);
-              NS_LOG_DEBUG ("New Route added to both tables");
-              m_advRoutingTable.AddRoute (newEntry);
+              // If Entry has a destination for equal to 
+              std::ostringstream oss; 
+              std::ostringstream oss2; 
+              if (m_ignoreColumn != -1)
+              { 
+                oss << "10.1.1." << (m_ignoreColumn+1);
+                oss2 << newEntry.GetDestination();
+                // if they not the same
+                if (!(oss.str().compare(oss2.str()) == 0)){ 
+			//NS_LOG_UNCOND("unmatch");
+	                m_routingTable.AddRoute (newEntry);
+         	        NS_LOG_DEBUG ("New Route added to both tables");
+                	m_advRoutingTable.AddRoute (newEntry);		
+		} 
+		
+                //if (Ipv4Address(oss.str())==newEntry.GetDestination()){ NS_LOG_UNCOND("match"); }
+              } else { // is not ignoring column
+
+                m_routingTable.AddRoute (newEntry);
+                NS_LOG_DEBUG ("New Route added to both tables");
+                m_advRoutingTable.AddRoute (newEntry);
+             }
             }
           else
             {

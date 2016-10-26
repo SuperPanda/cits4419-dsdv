@@ -135,6 +135,7 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
+  std::cout << "\rSimulation time elapsed: " << (Simulator::Now()).GetSeconds() << "s\t\tProgress: " << (float) (100.0*Simulator::Now()).GetSeconds() / (float) m_totalTime << "%\t" << std::flush;
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 

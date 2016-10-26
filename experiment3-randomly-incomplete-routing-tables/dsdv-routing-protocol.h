@@ -106,6 +106,7 @@ private:
   /// SettlingTime specifies the time for which a node waits before propagating an update.
   /// It waits for this time interval in hope of receiving an update with a better metric.
   Time m_settlingTime;
+  int32_t m_ignoreColumn;
   /// Nodes IP address
   Ipv4Address m_mainAddress;
   /// IP protocol

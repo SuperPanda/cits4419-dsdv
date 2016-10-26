@@ -8,8 +8,9 @@
 #include "ns3/mobility-module.h"
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
+#include "ns3/internet-stack-helper.h"
 #include "ns3/internet-module.h"
-#include "dsdv-helper.h"
+#include "scratch/experiment3-randomly-incomplete-routing-tables/dsdv-helper.h"
 #include <iostream>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
@@ -33,7 +34,8 @@ public:
                 uint32_t settlingTime,
                 double dataStart,
                 bool printRoutes,
-                std::string statsFileName);
+                std::string statsFileName,
+                double rtCorruptionProbability);
 
 private:
   uint32_t m_nWifis;
@@ -53,6 +55,8 @@ private:
   NodeContainer nodes;
   NetDeviceContainer devices;
   Ipv4InterfaceContainer interfaces;
+
+  double m_rtCorruptionProbability;
 
 private:
   void CreateNodes ();
@@ -79,11 +83,13 @@ int main (int argc, char **argv)
   uint32_t periodicUpdateInterval = 15;
   uint32_t settlingTime = 6;
   double dataStart = 50.0;
+  double rtCorruptionProbability = 0.0;
   bool printRoutingTable = true;
   std::string statsFileName = "SkeletonDsdvExperiment-unmodified.stat";
 
   CommandLine cmd;
   cmd.AddValue ("verbose", "Print trace and pcaps[Default:false]",isVerbose);
+  cmd.AddValue ("rtCorruptionProbability", "Probability that the routing table will have a missing entry", rtCorruptionProbability);
   cmd.AddValue ("nWifis", "Number of wifi nodes[Default:50]", nWifis);
   cmd.AddValue ("cbrNodes", "Number of wifi flows [Default:10]", cbrNodes);
   cmd.AddValue ("totalTime", "Total Simulation time[Default:100]", totalTime);
@@ -107,7 +113,7 @@ int main (int argc, char **argv)
 
   test = DsdvManetExperiment ();
   test.CaseRun (nWifis, cbrNodes, totalTime, rate, phyMode, nodeSpeed, periodicUpdateInterval,
-                settlingTime, dataStart, printRoutingTable, statsFileName);
+                settlingTime, dataStart, printRoutingTable, statsFileName, rtCorruptionProbability);
 
   return 0;
 }
@@ -135,6 +141,7 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
+  std::cout << "\rSimulation time elapsed: " << (Simulator::Now()).GetSeconds() << "s\t\tProgress: " << (float) (100.0*Simulator::Now()).GetSeconds() / (float) m_totalTime << "%\t" << std::flush;
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
@@ -162,7 +169,7 @@ DsdvManetExperiment::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
 void
 DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime, std::string rate,
                            std::string phyMode, uint32_t nodeSpeed, uint32_t periodicUpdateInterval, uint32_t settlingTime,
-                           double dataStart, bool printRoutes, std::string statsFileName)
+                           double dataStart, bool printRoutes, std::string statsFileName, double rtCorruptionProbability)
 {
   m_nWifis = nWifis;
   m_nSinks = nSinks;
@@ -175,7 +182,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   m_dataStart = dataStart;
   m_printRoutes = printRoutes;
   m_statsFileName = statsFileName;
-  
+  m_rtCorruptionProbability = rtCorruptionProbability;
+ 
   std::stringstream ss;
   ss << m_nWifis;
   std::string t_nodes = ss.str ();
@@ -288,20 +296,66 @@ DsdvManetExperiment::CreateDevices (std::string tr_name)
 void
 DsdvManetExperiment::InstallInternetStack (std::string tr_name)
 {
-  DsdvHelper dsdv;
-  dsdv.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
-  dsdv.Set ("SettlingTime", TimeValue (Seconds (m_settlingTime)));
-  InternetStackHelper stack;
-  stack.SetRoutingHelper (dsdv); // has effect on the next Install ()
-  stack.Install (nodes);
-  Ipv4AddressHelper address;
-  address.SetBase ("10.1.1.0", "255.255.255.0");
-  interfaces = address.Assign (devices);
-  if (m_printRoutes)
-    {
+
+  std::vector<int32_t> ignoreColumns = std::vector<int32_t>();
+  std::vector<DsdvHelper> dsdvHelpers = std::vector<DsdvHelper>();
+  /*for (uint32_t i = 1; i<=m_nWifis; i++)
+  {
+    std::ostringstream oss;
+    oss << "10.1.1." << i;
+    std::string genAddr = oss.str();
+    addresses.push_back(Ipv4Address(genAddr.c_str()));
+  }*/  
+  /**
+  * For each node, there is a probability ... crap... this broke the current running simulation
+  */
+  
+  //interfaces = address.Assign (devices);
+ 
+  for (uint32_t i = 0; i < m_nWifis; i++)
+  { 
+    DsdvHelper dsdv;
+    dsdv.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
+    dsdv.Set ("SettlingTime", TimeValue (Seconds (m_settlingTime)));
+
+    if (((double)(std::rand() % 100)/100.0)<= m_rtCorruptionProbability)
+    { 
+      //std::string randomAddress;
+      dsdv.Set("IgnoreColumn",IntegerValue(std::rand() % m_nWifis));
+      //arandomAddress = os.str();
+      //NS_LOG_UNCOND("node " << i << " is ignoring " << Ipv4Address(randomAddress));
+    } else {
+      dsdv.Set("IgnoreColumn",IntegerValue(-1));//s.GetObject()->push_back(-1);
+    }
+    //d->SetAddress(Address(addresses.at(i)));
+    //devices.Get(i)->SetAddress(addresses.at(i).Get());
+    //Ptr<Ipv4RoutingProtocol> dsdv_instance = dsdv.Create(nodes.Get(i));
+    //routeHelper.Install(dsdv_instance); // has effect on the next Install ()
+      //dsdv.Get("IgnoreAddress",insertedAddress);
+    //AttributeValue ia;
+    //dsdv_instance->GetAttribute("IgnoreAddress",ia);
+    //NS_LOG_UNCOND("Node: " << i << " is ignoring route entry for " << StringValue(ia) );
+    //if ()
+    //{
       Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ((tr_name + ".routes"), std::ios::out);
       dsdv.PrintRoutingTableAllAt (Seconds (m_periodicUpdateInterval), routingStream);
-    }
+    //}
+    dsdvHelpers.push_back(dsdv);
+
+  }
+  //dsdv.Set ("IgnoreColumns", ObjectVectorValue(ignoreColumns));
+  for (uint32_t i = 0; i < m_nWifis; i++)
+  {
+    InternetStackHelper stack;
+    stack.SetRoutingHelper(dsdvHelpers.at(i));
+    stack.Install(nodes.Get(i)); 
+    //stack.Install (nodes.Get(i));
+    //uint32_t insertedAddress;
+  }
+
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  interfaces = address.Assign(devices);
 }
 
 void
