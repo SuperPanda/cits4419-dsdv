@@ -13,9 +13,9 @@ for s in "${speed[@]}"
 do
   for n in "${cbrNodes[@]}"
   do
-    echo "** Experiment 1. Unmodified DSDV protocol (cbrNode=${n}, nodeSpeed=${s} **"
+    echo "** Experiment 1. Unmodified DSDV protocol (cbrNode=${n}, nodeSpeed=${s}) **"
     #./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
-    echo "** Experiment 1. DSDV protocol with only full updates (cbrNode=${n}, nodeSpeed=${s} **"
+    echo "** Experiment 1. DSDV protocol with only full updates (cbrNode=${n}, nodeSpeed=${s}) **"
     #./../waf --run "experiment1-full-updates-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 done
@@ -31,7 +31,7 @@ do
   do
     for n in "${cbrNodes[@]}"
     do
-     echo "** Experiment 2. Disabled DSDV updates in ${i} nodes (cbrNode=${n}, nodeSpeed=${s} **"
+     echo "** Experiment 2. Disabled DSDV updates in ${i} nodes (cbrNode=${n}, nodeSpeed=${s}) **"
      #./../waf --run "experiment2-disable-nodes-updating-dsdv --silentNodes=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}]-silentNode[${i}].stat --printRoutingTable"
     done
   done
@@ -65,7 +65,7 @@ for s in "${speed[@]}"
 do
   for n in "${cbrNodes[@]}"
   do
-    echo "** Experiment 4. DSDV protocol ignore sequence number (cbrNode=${n}, nodeSpeed=${s} **"
+    echo "** Experiment 4. DSDV protocol ignore sequence number (cbrNode=${n}, nodeSpeed=${s}) **"
     #./../waf --run "experiment4-ignore-seq-numbers --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment4-ignore-seq-numbers-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 done
