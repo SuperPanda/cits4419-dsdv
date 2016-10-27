@@ -69,6 +69,44 @@ RoutingTable::RoutingTable ()
 }
 
 bool
+RoutingTable::IsValidColumn(Ipv4Address dst, int32_t ignoredColumn)
+{
+ if (ignoredColumn == 0) return true;
+ std::ostringstream oss; oss << "10.1.1." << ignoredColumn;
+ std::ostringstream oss2; oss2 << dst;
+ if (oss.str().compare(oss2.str()) == 0) return false;
+ return true;
+}
+
+bool
+RoutingTable::LookupRoute (Ipv4Address id, RoutingTableEntry & rtm, int32_t ignoredColumn)
+{
+  if (!IsValidColumn(id,ignoredColumn)) return false;
+  return LookupRoute(id, rtm);
+}
+bool
+RoutingTable::LookupRoute (Ipv4Address id,
+                           RoutingTableEntry & rt,
+                           bool forRouteInput, int32_t ignoredColumn)
+{
+  if (!IsValidColumn(id,ignoredColumn)) return false;
+  return LookupRoute(id, rt, true);
+}
+bool
+RoutingTable::Update (RoutingTableEntry & rt, int32_t ignoredColumn)
+{
+  if (!IsValidColumn(rt.GetDestination(),ignoredColumn)) return false;
+  std::map<Ipv4Address, RoutingTableEntry>::iterator i = m_ipv4AddressEntry.find (rt.GetDestination ());
+  if (i == m_ipv4AddressEntry.end ())
+    {
+      return false;
+    }
+  i->second = rt;
+  return true;
+}
+
+
+bool
 RoutingTable::LookupRoute (Ipv4Address id,
                            RoutingTableEntry & rt)
 {
@@ -130,6 +168,12 @@ RoutingTable::AddRoute (RoutingTableEntry & rt)
   std::pair<std::map<Ipv4Address, RoutingTableEntry>::iterator, bool> result = m_ipv4AddressEntry.insert (std::make_pair (
                                                                                                             rt.GetDestination (),rt));
   return result.second;
+}
+bool
+RoutingTable::AddRoute (RoutingTableEntry& rt, int32_t ignoredColumn)
+{
+  if (!IsValidColumn(rt.GetDestination(),ignoredColumn)) return false;
+  return AddRoute(rt);
 }
 
 bool

@@ -145,6 +145,8 @@ private:
 
 private:
   
+  bool IgnoreColumn(std::ostringstream &str) const;
+  //bool IgnoreColumn(std::ostringstream &str,Ipv4Address addr) const;
   /// Start protocol operation
   void
   Start ();

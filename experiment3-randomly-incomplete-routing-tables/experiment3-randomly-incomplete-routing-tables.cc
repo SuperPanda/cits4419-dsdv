@@ -61,7 +61,7 @@ private:
 private:
   void CreateNodes ();
   void CreateDevices (std::string tr_name);
-  void InstallInternetStack (std::string tr_name);
+  void InstallInternetStack (std::string tr_name, std::vector<DsdvHelper>& dsdvHelper);
   void InstallApplications ();
   void SetupMobility ();
   void ReceivePacket (Ptr <Socket> );
@@ -72,6 +72,7 @@ private:
 
 int main (int argc, char **argv)
 {
+  //LogComponentEnable("IgnoringDsdvRoutingProtocol", LOG_LEVEL_INFO);
   DsdvManetExperiment test;
   uint32_t nWifis = 50;
   uint32_t cbrNodes = 10;
@@ -183,7 +184,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   m_printRoutes = printRoutes;
   m_statsFileName = statsFileName;
   m_rtCorruptionProbability = rtCorruptionProbability;
- 
+  std::vector<DsdvHelper> dsdvHelpers = std::vector<DsdvHelper>();
+
   std::stringstream ss;
   ss << m_nWifis;
   std::string t_nodes = ss.str ();
@@ -192,13 +194,15 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   ss3 << m_totalTime;
   std::string sTotalTime = ss3.str ();
 
-  std::string tr_name = "Dsdv_Manet_" + t_nodes + "Nodes_" + sTotalTime + "SimTime";
+   std::stringstream sstrace; 
+   sstrace <<  "Trace-experiment3-cbrNodes" << m_nSinks <<"-nodeSpeed"<<nodeSpeed<<"-rtCorruptionProbability"<<rtCorruptionProbability;
+  std::string tr_name = sstrace.str();
   std::cout << "Trace file generated is " << tr_name << ".tr\n";
 
   CreateNodes ();
   CreateDevices (tr_name);
   SetupMobility ();
-  InstallInternetStack (tr_name);
+  InstallInternetStack (tr_name,dsdvHelpers);
   InstallApplications ();
 
   std::cout << "\nStarting simulation for " << m_totalTime << " s ...\n";
@@ -236,8 +240,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   if (nTxPkts == 0) {nTxPkts = 1; nRxPkts = 0;} // stop divide by zero errors
   NS_LOG_UNCOND("Total received: " << nRxPkts << "/" << nTxPkts << " (" << (((float) nRxPkts / (float) nTxPkts)*100.0) << "%)");
   std::ofstream out (statsFileName.c_str ());
-  out << "cbrNodes,nodeSpeed,throughput" << std::endl;
-  out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
+  out << "rtCorruptionProbability,cbrNodes,nodeSpeed,throughput" << std::endl;
+  out << rtCorruptionProbability << "," << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
   out.close ();
   Simulator::Destroy ();
 }
@@ -294,52 +298,29 @@ DsdvManetExperiment::CreateDevices (std::string tr_name)
 }
 
 void
-DsdvManetExperiment::InstallInternetStack (std::string tr_name)
+DsdvManetExperiment::InstallInternetStack (std::string tr_name, std::vector<DsdvHelper> &dsdvHelpers)
 {
 
   std::vector<int32_t> ignoreColumns = std::vector<int32_t>();
-  std::vector<DsdvHelper> dsdvHelpers = std::vector<DsdvHelper>();
-  /*for (uint32_t i = 1; i<=m_nWifis; i++)
-  {
-    std::ostringstream oss;
-    oss << "10.1.1." << i;
-    std::string genAddr = oss.str();
-    addresses.push_back(Ipv4Address(genAddr.c_str()));
-  }*/  
-  /**
-  * For each node, there is a probability ... crap... this broke the current running simulation
-  */
-  
-  //interfaces = address.Assign (devices);
- 
+
   for (uint32_t i = 0; i < m_nWifis; i++)
   { 
+
     DsdvHelper dsdv;
     dsdv.Set ("PeriodicUpdateInterval", TimeValue (Seconds (m_periodicUpdateInterval)));
     dsdv.Set ("SettlingTime", TimeValue (Seconds (m_settlingTime)));
 
     if (((double)(std::rand() % 100)/100.0)<= m_rtCorruptionProbability)
     { 
-      //std::string randomAddress;
-      dsdv.Set("IgnoreColumn",IntegerValue(std::rand() % m_nWifis));
-      //arandomAddress = os.str();
-      //NS_LOG_UNCOND("node " << i << " is ignoring " << Ipv4Address(randomAddress));
+      // Ignore column 1 to m_nWifis (default: 50)
+      dsdv.Set("IgnoreColumn",IntegerValue((std::rand() % m_nWifis+1)));
     } else {
-      dsdv.Set("IgnoreColumn",IntegerValue(-1));//s.GetObject()->push_back(-1);
+      dsdv.Set("IgnoreColumn",IntegerValue(0));
     }
-    //d->SetAddress(Address(addresses.at(i)));
-    //devices.Get(i)->SetAddress(addresses.at(i).Get());
-    //Ptr<Ipv4RoutingProtocol> dsdv_instance = dsdv.Create(nodes.Get(i));
-    //routeHelper.Install(dsdv_instance); // has effect on the next Install ()
-      //dsdv.Get("IgnoreAddress",insertedAddress);
-    //AttributeValue ia;
-    //dsdv_instance->GetAttribute("IgnoreAddress",ia);
-    //NS_LOG_UNCOND("Node: " << i << " is ignoring route entry for " << StringValue(ia) );
-    //if ()
-    //{
-      Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ((tr_name + ".routes"), std::ios::out);
-      dsdv.PrintRoutingTableAllAt (Seconds (m_periodicUpdateInterval), routingStream);
-    //}
+
+    Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ((tr_name + ".routes"), std::ios::out);
+    dsdv.PrintRoutingTableAllAt (Seconds (m_periodicUpdateInterval), routingStream);
+
     dsdvHelpers.push_back(dsdv);
 
   }
@@ -349,8 +330,6 @@ DsdvManetExperiment::InstallInternetStack (std::string tr_name)
     InternetStackHelper stack;
     stack.SetRoutingHelper(dsdvHelpers.at(i));
     stack.Install(nodes.Get(i)); 
-    //stack.Install (nodes.Get(i));
-    //uint32_t insertedAddress;
   }
 
   Ipv4AddressHelper address;
@@ -362,7 +341,7 @@ void
 DsdvManetExperiment::InstallApplications ()
 {
   uint32_t clientNode = m_nWifis - 1;
-  for (uint32_t i = 0; i <= m_nSinks - 1; i++ )
+  for (uint32_t i = 0; i < m_nSinks; i++ )
     {
       // Setup CBR sinks
       Ptr<Node> sinkNode = NodeList::GetNode (i);

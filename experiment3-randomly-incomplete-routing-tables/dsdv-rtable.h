@@ -235,6 +235,25 @@ public:
    */
   bool
   DeleteRoute (Ipv4Address dst);
+ 
+  /**
+   * Modifications to filter ignoredColumn
+   */
+  bool
+  AddRoute (RoutingTableEntry & r, int32_t ignoredColumn);
+  //bool 
+  //DeleteRoute (Ipv4Address dst, int32_t ignoredColumn);
+
+  bool
+  IsValidColumn(Ipv4Address dst, int32_t ignoredColumn);
+  bool
+  LookupRoute (Ipv4Address dst, RoutingTableEntry & rt, int32_t ignoredColumn);
+  bool
+  LookupRoute (Ipv4Address id, RoutingTableEntry & rt, bool forRouteInput, int32_t ignoredColumn);
+ bool
+  Update (RoutingTableEntry & rt, int32_t ignoredColumn); 
+
+  
   /**
    * Lookup routing table entry with destination address dst
    * \param dst destination address
@@ -252,7 +271,7 @@ public:
    */
   bool
   Update (RoutingTableEntry & rt);
-  /**
+   /**
    * Lookup list of addresses for which nxtHp is the next Hop address
    * \param nxtHp nexthop's address for which we want the list of destinations
    * \param dstList is the list that will hold all these destination addresses

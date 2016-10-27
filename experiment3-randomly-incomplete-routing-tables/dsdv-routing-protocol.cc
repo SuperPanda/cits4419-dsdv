@@ -39,10 +39,9 @@
 #include "ns3/boolean.h"
 #include "ns3/double.h"
 #include "ns3/uinteger.h"
+ namespace ns3 {
 
-namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("SkeletonDsdvRoutingProtocol");
+NS_LOG_COMPONENT_DEFINE ("IgnoringDsdvRoutingProtocol");
   
 namespace dsdv {
   
@@ -105,6 +104,36 @@ struct DeferredRouteOutputTag : public Tag
     os << "DeferredRouteOutputTag: output interface = " << oif;
   }
 };
+
+// Returns the ip address for the ignore column
+bool RoutingProtocol::IgnoreColumn(std::ostringstream &str) const
+{
+  if (m_ignoreColumn == 0) return false;
+  std::ostringstream oss; if (m_ignoreColumn != 0){  oss << "10.1.1." << (m_ignoreColumn); } 
+  str << oss.str();
+  return true;
+}
+/**bool RoutingProtocol::IgnoreColumn(std::ostringstream& str, Ipv4Address addr) const
+{
+  std::ostringstream oss; if (m_ignoreColumn != 0){  oss << "10.1.1." << (m_ignoreColumn); } 
+  std::ostringstream oss2; oss2 << addr;
+  bool ignoreRouteTableEntry = false;
+  if (m_ignoreColumn == 0)
+  {
+    ignoreRouteTableEntry = false;
+  }
+  else if (oss.str().compare(oss2.str()) == 0) // Check if the strings are the same
+  { // if oss.str().comare(oss2.str()) == 0, then same, 
+    NS_LOG_DEBUG("Ignoring route rtable entry for " << addr);
+    ignoreRouteTableEntry = true; 
+  } 
+  else 
+  { // Otherwise different
+    ignoreRouteTableEntry = false;
+  }
+  str << oss.str();
+  return ignoreRouteTableEntry;
+}**/
 
 TypeId
 RoutingProtocol::GetTypeId (void)
@@ -238,10 +267,11 @@ RoutingProtocol::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
   // Makes the Ip address for the ignore column
   
-  std::ostringstream oss; if (m_ignoreColumn != -1){  oss << "10.1.1." << (m_ignoreColumn+1); } 
-  
+  //std::ostringstream oss; if (m_ignoreColumn != -1){  oss << "10.1.1." << (m_ignoreColumn+1); } 
+  std::ostringstream ossIp; bool isIgnoring; isIgnoring = IgnoreColumn(ossIp);
 
-  *stream->GetStream () << "Ignoring [" << (m_ignoreColumn != -1 ? oss.str() : "n/a" ) << "] Node: " << m_ipv4->GetObject<Node> ()->GetId ()
+  //*stream->GetStream () << "Ignoring [" << (m_ignoreColumn != -1 ? oss.str() : "n/a" ) << "] Node: " << m_ipv4->GetObject<Node> ()->GetId ()
+  *stream->GetStream () << "Ignoring [" << (isIgnoring ? ossIp.str() : "n/a" ) << "] Node: " << m_ipv4->GetObject<Node> ()->GetId ()
                         << ", Time: " << Now().As (Time::S)
                         << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
                         << ", DSDV Routing table" << std::endl;
@@ -264,6 +294,10 @@ RoutingProtocol::Start ()
   m_periodicUpdateTimer.Schedule (MicroSeconds (m_uniformRandomVariable->GetInteger (0,1000)));
 }
 
+
+/**
+ * Returns a route
+ */
 Ptr<Ipv4Route>
 RoutingProtocol::RouteOutput (Ptr<Packet> p,
                               const Ipv4Header &header,
@@ -273,16 +307,16 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   NS_LOG_FUNCTION (this << header << (oif ? oif->GetIfIndex () : 0));
 
   if (!p)
-    {
+  {
       return LoopbackRoute (header,oif);
-    }
+  }
   if (m_socketAddresses.empty ())
-    {
-      sockerr = Socket::ERROR_NOROUTETOHOST;
-      NS_LOG_LOGIC ("No dsdv interfaces");
-      Ptr<Ipv4Route> route;
-      return route;
-    }
+  {
+    sockerr = Socket::ERROR_NOROUTETOHOST;
+    NS_LOG_LOGIC ("No dsdv interfaces");
+    Ptr<Ipv4Route> route;
+    return route;
+  }
   std::map<Ipv4Address, RoutingTableEntry> removedAddresses;
   sockerr = Socket::ERROR_NOTERROR;
   Ptr<Ipv4Route> route;
@@ -293,69 +327,75 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
   m_routingTable.Purge (removedAddresses);
   for (std::map<Ipv4Address, RoutingTableEntry>::iterator rmItr = removedAddresses.begin ();
        rmItr != removedAddresses.end (); ++rmItr)
-    {
+  {
       rmItr->second.SetEntriesChanged (true);
       rmItr->second.SetSeqNo (rmItr->second.GetSeqNo () + 1);
       // CHECK IF FILTERED OR NOT
-      //
-      //
-      m_advRoutingTable.AddRoute (rmItr->second);
-    }
+      //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,rmItr->first);
+      //if (!ignoreRouteTableEntry)
+      //{
+      m_advRoutingTable.AddRoute (rmItr->second,m_ignoreColumn);
+      //}
+   }
   if (!removedAddresses.empty ())
-    {
+  {
       Simulator::Schedule (MicroSeconds (m_uniformRandomVariable->GetInteger (0,1000)),&RoutingProtocol::SendTriggeredUpdate,this);
-    }
-  if (m_routingTable.LookupRoute (dst,rt))
+  }
+  
+  //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,dst);
+
+  // block outputting of route from table if it is sourced from the ignored column 
+  if (m_routingTable.LookupRoute (dst,rt,m_ignoreColumn))
+  {
+    if (EnableBuffering)
     {
-      if (EnableBuffering)
-        {
-          LookForQueuedPackets ();
-        }
-      if (rt.GetHop () == 1)
-        {
-          route = rt.GetRoute ();
-          NS_ASSERT (route != 0);
-          NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
+      LookForQueuedPackets ();
+    }
+    if (rt.GetHop () == 1)
+    {
+      route = rt.GetRoute ();
+      NS_ASSERT (route != 0);
+      NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                << " to neighboring destination "
                                                << route->GetDestination ());
-          if (oif != 0 && route->GetOutputDevice () != oif)
-            {
-              NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
-              sockerr = Socket::ERROR_NOROUTETOHOST;
-              return Ptr<Ipv4Route> ();
-            }
-          return route;
-        }
-      else
-        {
-          RoutingTableEntry newrt;
-          if (m_routingTable.LookupRoute (rt.GetNextHop (),newrt))
-            {
-              route = newrt.GetRoute ();
-              NS_ASSERT (route != 0);
-              NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
+      if (oif != 0 && route->GetOutputDevice () != oif)
+      {
+        NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+        sockerr = Socket::ERROR_NOROUTETOHOST;
+        return Ptr<Ipv4Route> ();
+      }
+      return route;
+    }
+    else
+    {
+      RoutingTableEntry newrt;
+      if (m_routingTable.LookupRoute (rt.GetNextHop (),newrt,m_ignoreColumn))
+      {
+        route = newrt.GetRoute ();
+        NS_ASSERT (route != 0);
+        NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                    << " to destination " << dst << " via "
                                                    << rt.GetNextHop ());
-              if (oif != 0 && route->GetOutputDevice () != oif)
-                {
-                  NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
-                  sockerr = Socket::ERROR_NOROUTETOHOST;
-                  return Ptr<Ipv4Route> ();
-                }
-              return route;
-            }
+        if (oif != 0 && route->GetOutputDevice () != oif)
+        {
+          NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
+          sockerr = Socket::ERROR_NOROUTETOHOST;
+          return Ptr<Ipv4Route> ();
         }
+        return route;
+      }
     }
+  }
 
   if (EnableBuffering)
+  {
+    uint32_t iif = (oif ? m_ipv4->GetInterfaceForDevice (oif) : -1);
+    DeferredRouteOutputTag tag (iif);
+    if (!p->PeekPacketTag (tag))
     {
-      uint32_t iif = (oif ? m_ipv4->GetInterfaceForDevice (oif) : -1);
-      DeferredRouteOutputTag tag (iif);
-      if (!p->PeekPacketTag (tag))
-        {
-          p->AddPacketTag (tag);
-        }
+      p->AddPacketTag (tag);
     }
+  }
   return LoopbackRoute (header,oif);
 }
 
@@ -365,8 +405,15 @@ RoutingProtocol::DeferredRouteOutput (Ptr<const Packet> p,
                                       UnicastForwardCallback ucb,
                                       ErrorCallback ecb)
 {
+  //Ipv4Address ip4Addr = header.GetDestination();
+  //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,ip4Addr);
   NS_LOG_FUNCTION (this << p << header);
   NS_ASSERT (p != 0 && p != Ptr<Packet> ());
+  //if (ignoreRouteTableEntry) 
+  //{
+     //NS_LOG_UNCOND("Blocked routeEntry for " << ip4Addr << " [ignoring " << m_ignoreColumn << "]"); 
+     //return; 
+  //}
   QueueEntry newEntry (p,header,ucb,ecb);
   bool result = m_queue.Enqueue (newEntry);
   if (result)
@@ -375,6 +422,9 @@ RoutingProtocol::DeferredRouteOutput (Ptr<const Packet> p,
     }
 }
 
+/**
+ * Input for Route
+ */
 bool
 RoutingProtocol::RouteInput (Ptr<const Packet> p,
                              const Ipv4Header &header,
@@ -400,7 +450,7 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
 
   Ipv4Address dst = header.GetDestination ();
   Ipv4Address origin = header.GetSource ();
-
+  
   // DSDV is not a multicast routing protocol
   if (dst.IsMulticast ())
     {
@@ -451,7 +501,10 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
                 {
                   NS_LOG_LOGIC ("Forward broadcast. TTL " << (uint16_t) header.GetTtl ());
                   RoutingTableEntry toBroadcast;
-                  if (m_routingTable.LookupRoute (dst,toBroadcast,true))
+
+                  //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,dst);
+
+                  if (m_routingTable.LookupRoute (dst,toBroadcast,true,m_ignoreColumn))
                     {
                       Ptr<Ipv4Route> route = toBroadcast.GetRoute ();
                       ucb (route,packet,header);
@@ -466,6 +519,8 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
         }
     }
 
+  //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,dst);
+  // loopback
   if (m_ipv4->IsDestinationAddress (dst, iif))
     {
       if (lcb.IsNull () == false)
@@ -481,10 +536,10 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
       return true;
     }
   RoutingTableEntry toDst;
-  if (m_routingTable.LookupRoute (dst,toDst))
+  if (m_routingTable.LookupRoute (dst,toDst,m_ignoreColumn))
     {
       RoutingTableEntry ne;
-      if (m_routingTable.LookupRoute (toDst.GetNextHop (),ne))
+      if (m_routingTable.LookupRoute (toDst.GetNextHop (),ne,m_ignoreColumn))
         {
           Ptr<Ipv4Route> route = ne.GetRoute ();
           NS_LOG_LOGIC (m_mainAddress << " is forwarding packet " << p->GetUid ()
@@ -596,47 +651,43 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
       NS_LOG_DEBUG ("Received a DSDV packet from "
                     << sender << " to " << receiver << ". Details are: Destination: " << dsdvHeader.GetDst () << ", Seq No: "
                     << dsdvHeader.GetDstSeqno () << ", HopCount: " << dsdvHeader.GetHopCount ());
+      // Whats the fwdTableEntry for?
+      // Forward entries are initialized when reply
+      // packets are heading towards the source [Ad Hoc Networking, Charles E. Perkins, page 72]
       RoutingTableEntry fwdTableEntry, advTableEntry;
       EventId event;
-      bool permanentTableVerifier = m_routingTable.LookupRoute (dsdvHeader.GetDst (),fwdTableEntry);
+      
+      //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,dsdvHeader.GetDst());
+      // if a path is found to the destination in the routing table
+      bool permanentTableVerifier = m_routingTable.LookupRoute (dsdvHeader.GetDst (),fwdTableEntry,m_ignoreColumn);
       if (permanentTableVerifier == false)
         {
+          // SeqNo
+          // If the dsdvHeader is a reply (odd - request, even - reply)  
           if (dsdvHeader.GetDstSeqno () % 2 != 1)
             {
-              NS_LOG_DEBUG ("Received New Route!");
+              NS_LOG_DEBUG ("Received New Route! (sender: " << sender << ", dst:" << dsdvHeader.GetDst() << ")");
               RoutingTableEntry newEntry (
-                /*device=*/ dev, /*dst=*/
-                dsdvHeader.GetDst (), /*seqno=*/
-                dsdvHeader.GetDstSeqno (),
+                /*device=*/ dev, 
+                /*dst=*/ dsdvHeader.GetDst (), 
+                /*seqno=*/ dsdvHeader.GetDstSeqno (),
                 /*iface=*/ m_ipv4->GetAddress (m_ipv4->GetInterfaceForAddress (receiver), 0),
-                /*hops=*/ dsdvHeader.GetHopCount (), /*next hop=*/
-                sender, /*lifetime=*/
+                /*hops=*/ dsdvHeader.GetHopCount (), 
+                /*next hop=*/ sender, 
+                /*lifetime=*/
                 Simulator::Now (), /*settlingTime*/
                 m_settlingTime, /*entries changed*/
                 true);
               newEntry.SetFlag (VALID);
               // If Entry has a destination for equal to 
-              std::ostringstream oss; 
-              std::ostringstream oss2; 
-              if (m_ignoreColumn != -1)
-              { 
-                oss << "10.1.1." << (m_ignoreColumn+1);
-                oss2 << newEntry.GetDestination();
-                // if they not the same
-                if (!(oss.str().compare(oss2.str()) == 0)){ 
-			//NS_LOG_UNCOND("unmatch");
-	                m_routingTable.AddRoute (newEntry);
-         	        NS_LOG_DEBUG ("New Route added to both tables");
-                	m_advRoutingTable.AddRoute (newEntry);		
-		} 
-		
-                //if (Ipv4Address(oss.str())==newEntry.GetDestination()){ NS_LOG_UNCOND("match"); }
-              } else { // is not ignoring column
-
-                m_routingTable.AddRoute (newEntry);
-                NS_LOG_DEBUG ("New Route added to both tables");
-                m_advRoutingTable.AddRoute (newEntry);
-             }
+              // Filter if broken column
+             
+              //if (!ignoreRouteTableEntry){ 
+	          //NS_LOG_UNCOND("unmatch");
+	          m_routingTable.AddRoute (newEntry,m_ignoreColumn);
+         	  NS_LOG_DEBUG ("New Route added to both tables");
+                  m_advRoutingTable.AddRoute (newEntry,m_ignoreColumn);		
+		//} 
             }
           else
             {
@@ -647,7 +698,8 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
         }
       else
         {
-          if (!m_advRoutingTable.LookupRoute (dsdvHeader.GetDst (),advTableEntry))
+           // If can't find route on advertised table for the packets destination
+          if (!m_advRoutingTable.LookupRoute (dsdvHeader.GetDst (),advTableEntry,m_ignoreColumn))
             {
               RoutingTableEntry tr;
               std::map<Ipv4Address, RoutingTableEntry> allRoutes;
@@ -657,8 +709,9 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                   NS_LOG_DEBUG ("ADV table routes are:" << i->second.GetDestination ());
                 }
               // present in fwd table and not in advtable
-              m_advRoutingTable.AddRoute (fwdTableEntry);
-              m_advRoutingTable.LookupRoute (dsdvHeader.GetDst (),advTableEntry);
+              
+              m_advRoutingTable.AddRoute (fwdTableEntry,m_ignoreColumn);
+              m_advRoutingTable.LookupRoute (dsdvHeader.GetDst (),advTableEntry,m_ignoreColumn);
             }
           if (dsdvHeader.GetDstSeqno () % 2 != 1)
             {
@@ -684,11 +737,14 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       NS_LOG_DEBUG ("Added Settling Time:" << tempSettlingtime.GetSeconds ()
                                                            << "s as there is no event running for this route");
                       event = Simulator::Schedule (tempSettlingtime,&RoutingProtocol::SendTriggeredUpdate,this);
-                      m_advRoutingTable.AddIpv4Event (dsdvHeader.GetDst (),event);
-                      NS_LOG_DEBUG ("EventCreated EventUID: " << event.GetUid ());
-                      // if received changed metric, use it but adv it only after wst
-                      m_routingTable.Update (advTableEntry);
-                      m_advRoutingTable.Update (advTableEntry);
+                      //if (!ignoreRouteTableEntry)
+                      //{
+                        m_advRoutingTable.AddIpv4Event (dsdvHeader.GetDst (),event);
+                        NS_LOG_DEBUG ("EventCreated EventUID: " << event.GetUid ());
+                        // if received changed metric, use it but adv it only after wst
+                        m_routingTable.Update (advTableEntry, m_ignoreColumn);
+                        m_advRoutingTable.Update (advTableEntry,m_ignoreColumn);
+                      //}
                     }
                   else
                     {
@@ -699,7 +755,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       advTableEntry.SetEntriesChanged (true);
                       advTableEntry.SetNextHop (sender);
                       advTableEntry.SetHop (dsdvHeader.GetHopCount ());
-                      m_advRoutingTable.Update (advTableEntry);
+                      m_advRoutingTable.Update (advTableEntry,m_ignoreColumn);
                       NS_LOG_DEBUG ("Route with better sequence number and same metric received. Advertised without WST");
                     }
                 }
@@ -727,8 +783,8 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       m_advRoutingTable.AddIpv4Event (dsdvHeader.GetDst (),event);
                       NS_LOG_DEBUG ("EventCreated EventUID: " << event.GetUid ());
                       // if received changed metric, use it but adv it only after wst
-                      m_routingTable.Update (advTableEntry);
-                      m_advRoutingTable.Update (advTableEntry);
+                      m_routingTable.Update (advTableEntry,m_ignoreColumn);
+                      m_advRoutingTable.Update (advTableEntry,m_ignoreColumn);
                     }
                   else
                     {
@@ -743,7 +799,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                           if (advTableEntry.GetNextHop () == sender)
                             {
                               advTableEntry.SetLifeTime (Simulator::Now ());
-                              m_routingTable.Update (advTableEntry);
+                              m_routingTable.Update (advTableEntry,m_ignoreColumn);
                             }
                           m_advRoutingTable.DeleteRoute (
                             dsdvHeader.GetDst ());
@@ -775,13 +831,13 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                   m_routingTable.DeleteRoute (dsdvHeader.GetDst ());
                   advTableEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
                   advTableEntry.SetEntriesChanged (true);
-                  m_advRoutingTable.Update (advTableEntry);
+                  m_advRoutingTable.Update (advTableEntry,m_ignoreColumn);
                   for (std::map<Ipv4Address, RoutingTableEntry>::iterator i = dstsWithNextHopSrc.begin (); i
                        != dstsWithNextHopSrc.end (); ++i)
                     {
                       i->second.SetSeqNo (i->second.GetSeqNo () + 1);
                       i->second.SetEntriesChanged (true);
-                      m_advRoutingTable.AddRoute (i->second);
+                      m_advRoutingTable.AddRoute (i->second,m_ignoreColumn);
                       m_routingTable.DeleteRoute (i->second.GetDestination ());
                     }
                 }
@@ -837,27 +893,50 @@ RoutingProtocol::SendTriggeredUpdate ()
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
               temp.SetFlag (VALID);
               temp.SetEntriesChanged (false);
+              
+              //std::ostringstream oss; if (m_ignoreColumn != -1){  oss << "10.1.1." << (m_ignoreColumn+1); } 
+              //std::ostringstream oss2; oss2 << i->second.GetDestination();
+              /*bool processRouteTableEntry = false;
+              if (m_ignoreColumn == -1){
+                processRouteTableEntry = true;
+              
+              }
+              else if (oss.str().compare(oss2.str()) == 0) // Check if the strings are the same
+              { // if oss.str().comare(oss2.str()) == 0, then same, 
+                processRouteTableEntry = false; 
+              } 
+              else 
+              { // Otherwise different
+                processRouteTableEntry = true;
+              }
+                */
+
+                //Check
+              
               m_advRoutingTable.DeleteIpv4Event (temp.GetDestination ());
-              if (!(temp.GetSeqNo () % 2))
+              //if (processRouteTableEntry)
+              //{
+                if (!(temp.GetSeqNo () % 2))
                 {
-                  m_routingTable.Update (temp);
+                  m_routingTable.Update (temp,m_ignoreColumn);
                 }
-              packet->AddHeader (dsdvHeader);
+                packet->AddHeader (dsdvHeader);
+              //}
               m_advRoutingTable.DeleteRoute (temp.GetDestination ());
               NS_LOG_DEBUG ("Deleted this route from the advertised table");
-            }
+          }
           else
-            {
+          {
               EventId event = m_advRoutingTable.GetEventId (temp.GetDestination ());
               NS_ASSERT (event.GetUid () != 0);
               NS_LOG_DEBUG ("EventID " << event.GetUid () << " associated with "
                                        << temp.GetDestination () << " has not expired, waiting in adv table");
-            }
+          }
         }
       if (packet->GetSize () >= 12)
         {
           RoutingTableEntry temp2;
-          m_routingTable.LookupRoute (m_ipv4->GetAddress (1, 0).GetBroadcast (), temp2);
+          m_routingTable.LookupRoute (m_ipv4->GetAddress (1, 0).GetBroadcast (), temp2,m_ignoreColumn);
           dsdvHeader.SetDst (m_ipv4->GetAddress (1, 0).GetLocal ());
           dsdvHeader.SetDstSeqno (temp2.GetSeqNo ());
           dsdvHeader.SetHopCount (temp2.GetHop () + 1);
@@ -912,9 +991,9 @@ RoutingProtocol::SendPeriodicUpdate ()
               dsdvHeader.SetDst (m_ipv4->GetAddress (1,0).GetLocal ());
               dsdvHeader.SetDstSeqno (i->second.GetSeqNo () + 2);
               dsdvHeader.SetHopCount (i->second.GetHop () + 1);
-              m_routingTable.LookupRoute (m_ipv4->GetAddress (1,0).GetBroadcast (),ownEntry);
+              m_routingTable.LookupRoute (m_ipv4->GetAddress (1,0).GetBroadcast (),ownEntry,m_ignoreColumn);
               ownEntry.SetSeqNo (dsdvHeader.GetDstSeqno ());
-              m_routingTable.Update (ownEntry);
+              m_routingTable.Update (ownEntry,m_ignoreColumn);
               packet->AddHeader (dsdvHeader);
             }
           else
@@ -980,7 +1059,7 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
     /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
   rt.SetFlag (INVALID);
   rt.SetEntriesChanged (false);
-  m_routingTable.AddRoute (rt);
+  m_routingTable.AddRoute (rt,m_ignoreColumn);
   Simulator::ScheduleNow (&RoutingProtocol::Start,this);
 }
 
@@ -1008,7 +1087,7 @@ RoutingProtocol::NotifyInterfaceUp (uint32_t i)
   Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
   RoutingTableEntry rt (/*device=*/ dev, /*dst=*/ iface.GetBroadcast (), /*seqno=*/ 0,/*iface=*/ iface,/*hops=*/ 0,
                                     /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
-  m_routingTable.AddRoute (rt);
+  m_routingTable.AddRoute (rt,m_ignoreColumn);
   if (m_mainAddress == Ipv4Address ())
     {
       m_mainAddress = iface.GetLocal ();
@@ -1064,7 +1143,7 @@ RoutingProtocol::NotifyAddAddress (uint32_t i,
       Ptr<NetDevice> dev = m_ipv4->GetNetDevice (m_ipv4->GetInterfaceForAddress (iface.GetLocal ()));
       RoutingTableEntry rt (/*device=*/ dev, /*dst=*/ iface.GetBroadcast (),/*seqno=*/ 0, /*iface=*/ iface,/*hops=*/ 0,
                                         /*next hop=*/ iface.GetBroadcast (), /*lifetime=*/ Simulator::GetMaximumSimulationTime ());
-      m_routingTable.AddRoute (rt);
+      m_routingTable.AddRoute (rt,m_ignoreColumn);
     }
 }
 
@@ -1138,8 +1217,13 @@ RoutingProtocol::LookForQueuedPackets ()
   m_routingTable.GetListOfAllRoutes (allRoutes);
   for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
     {
+
       RoutingTableEntry rt;
       rt = i->second;
+      //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,i->first);
+      //if (ignoreRouteTableEntry){
+      //   continue;
+      //}
       if (m_queue.Find (rt.GetDestination ()))
         {
           if (rt.GetHop () == 1)
@@ -1153,7 +1237,7 @@ RoutingProtocol::LookForQueuedPackets ()
           else
             {
               RoutingTableEntry newrt;
-              m_routingTable.LookupRoute (rt.GetNextHop (),newrt);
+              m_routingTable.LookupRoute (rt.GetNextHop (),newrt,m_ignoreColumn,m_ignoreColumn);
               route = newrt.GetRoute ();
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to destination " << route->GetDestination () << " via "
@@ -1187,6 +1271,12 @@ RoutingProtocol::SendPacketFromQueue (Ipv4Address dst,
       Ipv4Header header = queueEntry.GetIpv4Header ();
       header.SetSource (route->GetSource ());
       header.SetTtl (header.GetTtl () + 1); // compensate extra TTL decrement by fake loopback routing
+      // A strange bug where source and destination packets are not initialized
+      // Debugger showed that on certain cases, the routes would not have there IP addresses initialised in the packet
+      // By comparing the source and destination; it will drop packets that are bound to itself
+      // Don't believe me, remove the line, and when it crashes  follow the stack trace to this location (gdb> up)
+      // then (gdb> p route->GetSource()) and (gdb> route->GetDestination())
+      if (route->GetDestination() == route->GetSource()) return;
       ucb (route,p,header);
       if (m_queue.GetSize () != 0 && m_queue.Find (dst))
         {
@@ -1202,7 +1292,7 @@ RoutingProtocol::GetSettlingTime (Ipv4Address address)
   NS_LOG_FUNCTION ("Calculating the settling time for " << address);
   RoutingTableEntry mainrt;
   Time weightedTime;
-  m_routingTable.LookupRoute (address,mainrt);
+  m_routingTable.LookupRoute (address,mainrt,m_ignoreColumn);
   if (EnableWST)
     {
       if (mainrt.GetSettlingTime () == Seconds (0))
@@ -1233,16 +1323,21 @@ RoutingProtocol::MergeTriggerPeriodicUpdates ()
       for (std::map<Ipv4Address, RoutingTableEntry>::const_iterator i = allRoutes.begin (); i != allRoutes.end (); ++i)
         {
           RoutingTableEntry advEntry = i->second;
+           //std::ostringstream ossIp; bool ignoreRouteTableEntry; ignoreRouteTableEntry = IgnoreColumn(ossIp,advEntry.GetDestination());
           if ((advEntry.GetEntriesChanged () == true) && (!m_advRoutingTable.AnyRunningEvent (advEntry.GetDestination ())))
             {
               if (!(advEntry.GetSeqNo () % 2))
-                {
+              {
                   advEntry.SetFlag (VALID);
                   advEntry.SetEntriesChanged (false);
-                  m_routingTable.Update (advEntry);
+              
+                //if (!ignoreRouteTableEntry)
+                //{ 
+                  m_routingTable.Update (advEntry,m_ignoreColumn);
+                  m_advRoutingTable.DeleteRoute (advEntry.GetDestination ());
                   NS_LOG_DEBUG ("Merged update for " << advEntry.GetDestination () << " with main routing Table");
-                }
-              m_advRoutingTable.DeleteRoute (advEntry.GetDestination ());
+                //}
+              }
             }
           else
             {
