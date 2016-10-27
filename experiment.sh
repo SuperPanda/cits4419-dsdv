@@ -48,8 +48,8 @@ for i in "${experiment3[@]}"
   do
     for n in "${cbrNodes[@]}"
     do
-      echo "** Experiment 3: Ignore Route Table Column (probability ${i}) **"
-      ./../waf --run "experiment3-randomly-incomplete-route-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-route-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
+      echo "** Experiment 3: Ignore Route Table Column (rtCorruptionProbability=${i}, cbrNode=${n}, nodeSpeed=${s}) **"
+      ./../waf --run "experiment3-randomly-incomplete-routing-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-routing-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
     done
   done
 done
