@@ -9,7 +9,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
-#include "scratch/full-updates-dsdv-experiment1/dsdv-helper.h"
+#include "scratch/experiment1-full-updates-dsdv/dsdv-helper.h"
 #include <iostream>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
@@ -135,6 +135,7 @@ DsdvManetExperiment::CheckThroughput ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
+  NS_LOG_UNCOND("Time: " << (Simulator::Now()).GetSeconds() << "s");
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
