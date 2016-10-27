@@ -1,6 +1,6 @@
 # cits4419-dsdv
-Modified code to experiment with the DSDV protocol for use with the ns-3 simulator. All code should be slight modifications of unmodified-dsdv.cc or the protocols
-## DSDVExperiments
+In order to create an experiment, we use the pristine implementation of the DSDV protocol based on model provided by the ns-3 simulator. Experiments are created by copying the pristine folder into the ns3/scratch directory. Graphs can be generated using the ./experiment{N}-graph.sh.
+## DSDV Experiments
 See experiment.sh for commands used.
 ### Experiment 1. Full updates only
 Compares the unmodified DSDV protocol vs Full update only implementation.
