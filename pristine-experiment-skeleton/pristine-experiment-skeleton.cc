@@ -2,6 +2,8 @@
  * The source code modifies the ns3's dsdv manet example,
  * which can be found under 'src/dsdv/examples/dsdv-manet.cc'
  **/
+#include <iostream>
+#include <iomanip>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
@@ -9,7 +11,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
-#include "scratch/<folder_name>/dsdv-helper.h"
+#include "scratch/<NAME_OF_EXPERIMENT_DIRECTORY>/dsdv-helper.h"
 #include <iostream>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
@@ -18,9 +20,11 @@ using namespace ns3;
   * Ideas for formatting table:
   * http://stackoverflow.com/questions/14765155/how-can-i-easily-format-my-data-table-in-c
   */
-template<typename T> void format(T t, const int& width)
+template<typename T> std::string format(T t, const int& width)
 {
-    cout << left << setw(width) << setfill(' ') << t;
+    std::ostringstream ss;
+    ss << std::left << std::setw(width) << std::setfill(' ') << t;
+    return ss.str();
 }
 
 uint16_t port = 9;
@@ -251,6 +255,7 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
     */
   const int valueWidth = 8;
   const int flowWidth = 40;
+  std::cout << std::endl;
   NS_LOG_UNCOND(format("Flow",flowWidth) << format("Tx Packets",valueWidth) << format("RxPackets",valueWidth) << format("Throughput (Mbit/s)",valueWidth));
   
 
