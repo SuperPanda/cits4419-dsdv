@@ -9,7 +9,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
-#include "scratch/disable-nodes-updating-dsdv-experiment2/dsdv-helper.h"
+#include "scratch/experiment2-disable-nodes-updating-dsdv/dsdv-helper.h"
 #include <iostream>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
