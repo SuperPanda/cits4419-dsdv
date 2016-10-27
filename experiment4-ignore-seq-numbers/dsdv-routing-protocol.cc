@@ -630,7 +630,8 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
             }
           if (dsdvHeader.GetDstSeqno () % 2 != 1)
             {
-              if (dsdvHeader.GetDstSeqno () > advTableEntry.GetSeqNo ())
+              //if (dsdvHeader.GetDstSeqno () > advTableEntry.GetSeqNo ())
+              if (true)
                 {
                   // Received update with better seq number. Clear any old events that are running
                   if (m_advRoutingTable.ForceDeleteIpv4Event (dsdvHeader.GetDst ()))

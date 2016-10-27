@@ -32,7 +32,7 @@ do
     for n in "${cbrNodes[@]}"
     do
      echo "** Experiment 2. Disabled DSDV updates in ${i} nodes (cbrNode=${n}, nodeSpeed=${s} **"
-      ./../waf --run "experiment2-disable-nodes-updating-dsdv --silentNodes=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}]-silentNode[${i}].stat --printRoutingTable"
+     #./../waf --run "experiment2-disable-nodes-updating-dsdv --silentNodes=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}]-silentNode[${i}].stat --printRoutingTable"
     done
   done
 done
@@ -49,11 +49,26 @@ for i in "${experiment3[@]}"
     for n in "${cbrNodes[@]}"
     do
       echo "** Experiment 3: Ignore Route Table Column (rtCorruptionProbability=${i}, cbrNode=${n}, nodeSpeed=${s}) **"
-      ./../waf --run "experiment3-randomly-incomplete-routing-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-routing-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
+      #./../waf --run "experiment3-randomly-incomplete-routing-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-routing-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
     done
   done
 done
-#echo "Starting experiment 4 [incomplete] with ${n} CBR nodes @ ${s}m/s: Ignoring sequence numbers in DSDV"
+#echo ""
  #./../waf --run "ignore-sequence-number-dsdv --cbrNodes=${n} --nodeSpeed=${s}" > ignore-sequence-number-dsdv.dat 2>&1
+
+echo " "
+echo "=================================="
+echo "==        Experiment 4         =="
+echo "================================="
+echo " "
+for s in "${speed[@]}"
+do
+  for n in "${cbrNodes[@]}"
+  do
+    echo "** Experiment 4. DSDV protocol ignore sequence number (cbrNode=${n}, nodeSpeed=${s} **"
+    ./../waf --run "experiment4-ignore-seq-numbers --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment4-ignore-seq-numbers-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+  done
+done
+
 
 echo "Done!"
