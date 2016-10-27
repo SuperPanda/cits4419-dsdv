@@ -66,7 +66,7 @@ private:
   void SetupMobility ();
   void ReceivePacket (Ptr <Socket> );
   Ptr <Socket> SetupPacketReceive (Ipv4Address, Ptr <Node> );
-  void CheckThroughput ();
+  void CheckProgress ();
 
 };
 
@@ -137,12 +137,32 @@ DsdvManetExperiment::ReceivePacket (Ptr <Socket> socket)
     }
 }
 
+/**
+ * Should be renamed to CheckProgress
+ */
 void
-DsdvManetExperiment::CheckThroughput ()
+DsdvManetExperiment::CheckProgress ()
 {
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
-  std::cout << "\rSimulation time elapsed: " << (Simulator::Now()).GetSeconds() << "s\t\tProgress: " << (float) (100.0*Simulator::Now()).GetSeconds() / (float) m_totalTime << "%\t" << std::flush;
+  float percentComplete = (float) (100.0*Simulator::Now()).GetSeconds() / (float) m_totalTime;
+  //int ticks = (int) percentComplete;
+  std::cout << "\rProgress [";
+  int sizeOfBar = 30;
+  for (int i = 0; i < sizeOfBar; i++)
+  {
+    if ((float) i < (((float) sizeOfBar)*(float) percentComplete/100.0))
+    {
+      std::cout << "#";
+    }
+    else
+    {
+      std::cout << " ";
+    }
+  }
+  std::cout << "] " << percentComplete << "%\t";
+  std::cout << "\tSimulation time: " << (Simulator::Now()).GetSeconds() << "s / " << m_totalTime << "s\t\t";
+  std::cout << std::flush;
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
@@ -151,7 +171,7 @@ DsdvManetExperiment::CheckThroughput ()
     out.close ();
   }
   packetsReceived = 0;
-  Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckThroughput, this);
+  Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckProgress, this);
 }
 
 Ptr <Socket>
@@ -207,7 +227,7 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   std::cout << "\nStarting simulation for " << m_totalTime << " s ...\n";
 
-  CheckThroughput (); // Is this necessary?
+  CheckProgress (); // Is this necessary?
   
   // Setup the flow monitor
   Ptr<FlowMonitor> monitor;
