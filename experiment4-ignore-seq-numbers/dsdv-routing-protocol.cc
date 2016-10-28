@@ -631,7 +631,7 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
           if (dsdvHeader.GetDstSeqno () % 2 != 1)
             {
               //if (dsdvHeader.GetDstSeqno () > advTableEntry.GetSeqNo ())
-              if (true)
+              if (false)
                 {
                   // Received update with better seq number. Clear any old events that are running
                   if (m_advRoutingTable.ForceDeleteIpv4Event (dsdvHeader.GetDst ()))
@@ -672,8 +672,9 @@ RoutingProtocol::RecvDsdv (Ptr<Socket> socket)
                       NS_LOG_DEBUG ("Route with better sequence number and same metric received. Advertised without WST");
                     }
                 }
-              else if (dsdvHeader.GetDstSeqno () == advTableEntry.GetSeqNo ())
+              else if (true)
                 {
+                  //else if (dsdvHeader.GetDstSeqno () == advTableEntry.GetSeqNo ())
                   if (dsdvHeader.GetHopCount () < advTableEntry.GetHop ())
                     {
                       /*Received update with same seq number and better hop count.

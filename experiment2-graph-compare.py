@@ -70,6 +70,10 @@ for i in range(1,len(allFiles)):
   setOfSilentNodes = set([a1[0] for a1 in a if a1[0] != 0])
   # (cbrNodes,nodeSpeed) -> throughput
   subplot_id = 0
+  l1 = None;
+  l2 = None;
+  l3 = None;
+  l4 = None;
   # Start plotting
   for nSilentNodes in setOfSilentNodes:
     subplot_id += 1
@@ -104,14 +108,17 @@ for i in range(1,len(allFiles)):
       print("y_original_result")
       print(y_original_result)
       lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with ' + str(nSilentNodes) + ' uncooperative nodes'
-      ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
-      ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
+      l1 = ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
+      l2 = ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
       lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with original DSDV implementation'
-      ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
+      l3  = ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
       x_original = []
-      ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
+      l4 = ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
     print([x, y, y_original_result])
-#plt.legend(loc='lower center', bbox_to_anchor=(0.5,-5a), fancybox=True, shadow=True, ncol=3)a
+#lt.legend(loc='lower center', bbox_to_anchor=(0.5,-5a), fancybox=True, shadow=True, ncol=3)a
 #aplt.grid(True)
+#plt.legend(bbox_transform=plt.gcf().transFigure,bbox_to_anchor=(1.0,1.0))
 plt.legend()
+#plt.tight_layout()
+  #fig.legend(l1,l2,loc='bottom')
 plt.show()
