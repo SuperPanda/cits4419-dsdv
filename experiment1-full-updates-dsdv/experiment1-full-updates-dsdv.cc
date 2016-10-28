@@ -11,10 +11,20 @@
 #include "ns3/internet-module.h"
 #include "scratch/experiment1-full-updates-dsdv/dsdv-helper.h"
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
 using namespace ns3;
-
+/**
+  * Ideas for formatting table:
+  * http://stackoverflow.com/questions/14765155/how-can-i-easily-format-my-data-table-in-c
+  */
+template<typename T> std::string format(T t, const int& width)
+{
+    std::ostringstream ss;
+    ss << std::left << std::setw(width) << std::setfill(' ') << t;
+    return ss.str();
+}
 uint16_t port = 9;
 bool isVerbose = false;
 NS_LOG_COMPONENT_DEFINE ("DsdvManetExperiment");
@@ -62,7 +72,7 @@ private:
   void SetupMobility ();
   void ReceivePacket (Ptr <Socket> );
   Ptr <Socket> SetupPacketReceive (Ipv4Address, Ptr <Node> );
-  void CheckThroughput ();
+  void CheckProgress ();
 
 };
 
@@ -129,13 +139,36 @@ DsdvManetExperiment::ReceivePacket (Ptr <Socket> socket)
       packetsReceived += 1;
     }
 }
-
+/**
+ * CheckProgress
+ */
 void
-DsdvManetExperiment::CheckThroughput ()
+DsdvManetExperiment::CheckProgress ()
 {
+
+  int sizeOfBar = 30;
+  float percentComplete = (float) (100.0*Simulator::Now()).GetSeconds() / (float) m_totalTime;
+
+  std::cout << "\rProgress [";
+  for (int i = 0; i < sizeOfBar; i++)
+  {
+    if ((float) i < (((float) sizeOfBar)*(float) percentComplete/100.0))
+    {
+      std::cout << "#";
+    }
+    else
+    {
+      std::cout << " ";
+    }
+  }
+  std::cout << "] " << percentComplete << "%\t";
+
+  std::cout << "\tSimulation time: " << (Simulator::Now()).GetSeconds() << "s / " << m_totalTime << "s\t\t";
+  std::cout << std::flush;
+
+  // Live throughput readings
   double kbs = (bytesTotal * 8.0) / 1000;
   bytesTotal = 0;
-  NS_LOG_UNCOND("Time: " << (Simulator::Now()).GetSeconds() << "s");
   if (isVerbose){
     std::ofstream out (m_statsFileName.c_str (), std::ios::app);
 
@@ -144,8 +177,9 @@ DsdvManetExperiment::CheckThroughput ()
     out.close ();
   }
   packetsReceived = 0;
-  Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckThroughput, this);
+  Simulator::Schedule (Seconds (1.0), &DsdvManetExperiment::CheckProgress, this);
 }
+
 
 Ptr <Socket>
 DsdvManetExperiment::SetupPacketReceive (Ipv4Address addr, Ptr <Node> node)
@@ -196,7 +230,7 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   std::cout << "\nStarting simulation for " << m_totalTime << " s ...\n";
 
-  CheckThroughput (); // Is this necessary?
+  CheckProgress (); // Is this necessary?
   
   // Setup the flow monitor
   Ptr<FlowMonitor> monitor;
@@ -213,21 +247,38 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
   // Flow monitor stats
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowHelper.GetClassifier());
   std::map<FlowId,FlowMonitor::FlowStats> stats = monitor->GetFlowStats();
+
+ /**
+    * Ideas for formatting table:
+    * http://stackoverflow.com/questions/14765155/how-can-i-easily-format-my-data-table-in-c
+    */
+  const int valueWidth = 10;
+  const int flowWidth = 40;
+  std::cout << std::endl;
+  NS_LOG_UNCOND(format("Flow",flowWidth) << format("TxPkts",valueWidth) << format("RxPkts",valueWidth) << format("Throughput (Mbit/s)",valueWidth));
+  
+
   for (std::map<FlowId,FlowMonitor::FlowStats>::const_iterator iter = stats.begin(); iter != stats.end(); ++iter)
   {
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(iter->first);
 
-    NS_LOG_UNCOND("Flow "<< iter->first << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")");
+    std::ostringstream ossFlow, ossTxPkts, ossRxPkts, ossThroughput;
+    ossFlow << "#" << iter->first << ": " << t.sourceAddress << " -> " << t.destinationAddress;
+    ossTxPkts << iter->second.txPackets;
+    ossRxPkts << iter->second.rxPackets;
+    ossThroughput  << iter->second.rxBytes * 8.0 / (float) (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 ;
+
     nTxPkts += iter->second.txPackets;
     nRxPkts += iter->second.rxPackets;
-    NS_LOG_UNCOND("Tx Packets:\t" << iter->second.txPackets);
-    NS_LOG_UNCOND("Rx Packets:\t" << iter->second.rxPackets);
-    //NS_LOG_UNCOND("Tx Bytes:\t" << iter->second.txBytes);
-    //NS_LOG_UNCOND("Rx Bytes:\t" << iter->second.rxBytes);
-    NS_LOG_UNCOND("Throughput " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
-    }
+    
+    NS_LOG_UNCOND(format(ossFlow.str(),flowWidth) << format(ossTxPkts.str(),valueWidth) << format(ossRxPkts.str(),valueWidth) << format(ossThroughput.str(),valueWidth));
+  }
+
   if (nTxPkts == 0) {nTxPkts = 1; nRxPkts = 0;} // stop divide by zero errors
+
   NS_LOG_UNCOND("Total received: " << nRxPkts << "/" << nTxPkts << " (" << (((float) nRxPkts / (float) nTxPkts)*100.0) << "%)");
+
+
   std::ofstream out (statsFileName.c_str ());
   out << "cbrNodes,nodeSpeed,throughput" << std::endl;
   out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;

@@ -12,7 +12,6 @@
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
 #include "scratch/<NAME_OF_EXPERIMENT_DIRECTORY>/dsdv-helper.h"
-#include <iostream>
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
 using namespace ns3;
@@ -231,7 +230,7 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   std::cout << "\nStarting simulation for " << m_totalTime << " s ...\n";
 
-  CheckProgress (); // Is this necessary?
+  CheckProgress ();
   
   // Setup the flow monitor
   Ptr<FlowMonitor> monitor;
@@ -253,10 +252,10 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
     * Ideas for formatting table:
     * http://stackoverflow.com/questions/14765155/how-can-i-easily-format-my-data-table-in-c
     */
-  const int valueWidth = 8;
+  const int valueWidth = 10;
   const int flowWidth = 40;
   std::cout << std::endl;
-  NS_LOG_UNCOND(format("Flow",flowWidth) << format("Tx Packets",valueWidth) << format("RxPackets",valueWidth) << format("Throughput (Mbit/s)",valueWidth));
+  NS_LOG_UNCOND(format("Flow",flowWidth) << format("TxPkts",valueWidth) << format("RxPkts",valueWidth) << format("Throughput (Mbit/s)",valueWidth));
   
 
   for (std::map<FlowId,FlowMonitor::FlowStats>::const_iterator iter = stats.begin(); iter != stats.end(); ++iter)
@@ -272,11 +271,6 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
     nTxPkts += iter->second.txPackets;
     nRxPkts += iter->second.rxPackets;
     
-    //NS_LOG_UNCOND("Tx Packets:\t" << iter->second.txPackets);
-    //S_LOG_UNCOND("Rx Packets:\t" << iter->second.rxPackets);
-    //NS_LOG_UNCOND("Tx Bytes:\t" << iter->second.txBytes);
-    //NS_LOG_UNCOND("Rx Bytes:\t" << iter->second.rxBytes);
-    //("Throughput " << iter->second.rxBytes * 8.0 / (iter->second.timeLastRxPacket.GetSeconds()-iter->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps");
     NS_LOG_UNCOND(format(ossFlow.str(),flowWidth) << format(ossTxPkts.str(),valueWidth) << format(ossRxPkts.str(),valueWidth) << format(ossThroughput.str(),valueWidth));
   }
 
