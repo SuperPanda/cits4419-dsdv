@@ -1,0 +1,1 @@
+python statistics/experiment5-graph-compare-no-legend.py "Baseline of update interval time of 15s" statistics/baseline-full-stats "Throughput of DSDV protocol with different update interval times" statistics/experiment5-full-stats

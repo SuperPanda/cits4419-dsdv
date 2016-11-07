@@ -114,10 +114,10 @@ for i in range(1,len(allFiles)):
       lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s'
       l1 = ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
       l2 = ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (default 15s periodic update interval)'
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s\n(default 15s periodic update interval)'
       l3  = ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
       x_original = []
       l4 = ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
     print([x, y, y_original_result])
-plt.legend()
+#plt.legend()
 plt.show()

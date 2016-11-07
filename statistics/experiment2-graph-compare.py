@@ -83,7 +83,7 @@ for i in range(1,len(allFiles)):
     ax.set_xlabel('Number of nodes generating CBR traffic')
     ax.set_ylabel('Throughput (pkts rx / pkts tx)')
     ax.grid(True)
-    ax.axis([0,35,0,1.0])
+    ax.axis([0,41,0,1.0])
     line_id = 0
     for nodeSpeed in setOfNodeSpeeds:
       line_id += 1
@@ -107,10 +107,10 @@ for i in range(1,len(allFiles)):
       print(y)
       print("y_original_result")
       print(y_original_result)
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with ' + str(nSilentNodes) + ' uncooperative nodes'
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (with uncooperative nodes)'
       l1 = ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
       l2 = ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with original DSDV implementation'
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (with original DSDV implementation)'
       l3  = ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
       x_original = []
       l4 = ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   

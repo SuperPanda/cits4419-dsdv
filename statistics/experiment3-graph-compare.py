@@ -78,7 +78,7 @@ for i in range(1,len(allFiles)):
     ax.set_xlabel('Number of nodes generating CBR traffic')
     ax.set_ylabel('Throughput (pkts rx / pkts tx)')
     ax.grid(True)
-    ax.axis([0,35,0,1.0])
+    ax.axis([0,41,0,1.0])
     line_id = 0
     for nodeSpeed in setOfNodeSpeeds:
       line_id += 1

@@ -1,5 +1,4 @@
 #import Gnuplot
-
 from matplotlib import pyplot as plt
 import numpy as np
 import sys
@@ -23,7 +22,7 @@ combinations_original = ['r--', 'g--.', 'b--', 'rx', 'gx', 'bx']
 fig = plt.figure()
 #ax = fig.add_subplot(111)
 
-dt = np.dtype([('periodicUpdateInterval',int),('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
+dt = np.dtype([('rtCorruptionProbability',float),('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
 dt_original = np.dtype([('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
 allFiles = [[join(d,f) for f in listdir(d) if isfile(join(d,f))] for d in listOfDirs]
 a = []
@@ -31,14 +30,13 @@ for i in range(0,len(allFiles)):
   fileList = allFiles[i]
   for f in fileList:
     print("loading " + f + "...")
-    # periodicUpdateInterval, numCBRNodes, nodeSpeed, throughput
+    # numCBRNodes, nodeSpeed, throughput
     if (i == 0):
       b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt_original)
-      # 15s is default periodicUpdateInterval
-      a.append((15,b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
+      a.append((0,b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
     else:
       b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt)
-      a.append((b['periodicUpdateInterval'].item(0),b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
+      a.append((b['rtCorruptionProbability'].item(0),b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
   list.sort(a)
 
 
@@ -51,7 +49,7 @@ originalDataSet = set()
 for a1 in a:
   print("a1:")
   print(a1)
-  if a1[0] == 15:
+  if a1[0] == 0:
     originalDataSet.add((a1[1],a1[2],a1[3]))
 print(originalDataSet)
 # cbrNodes, nodeSpeeds and throughput
@@ -68,20 +66,14 @@ print(originalDataMap)
 
 for i in range(1,len(allFiles)):
   setOfNodeSpeeds = set([a1[2] for a1 in a])
-  setOfUpdateIntervals = set([a1[0] for a1 in a if a1[0] != 0])
+  setOfRouteTableCorruptionProbability = set([a1[0] for a1 in a if a1[0] != 0])
   # (cbrNodes,nodeSpeed) -> throughput
   subplot_id = 0
-  l1 = None;
-  l2 = None;
-  l3 = None;
-  l4 = None;
   # Start plotting
-  for nPeriodicUpdateInterval in setOfUpdateIntervals:
-    if (nPeriodicUpdateInterval == 15):
-      continue
+  for probabilityOfRouteTableFailure in setOfRouteTableCorruptionProbability:
     subplot_id += 1
-    ax = fig.add_subplot((len(setOfUpdateIntervals)-1)*10+100+subplot_id)
-    ax.set_title("Throughput (update interval " + str(nPeriodicUpdateInterval) + "s)")
+    ax = fig.add_subplot(len(setOfRouteTableCorruptionProbability)*10+100+subplot_id)
+    ax.set_title("Throughput with column corruption p=" + str(probabilityOfRouteTableFailure))
     #plt.title('Experiment 1: Throughput of unmodified DSDV protocol')
     ax.set_xlabel('Number of nodes generating CBR traffic')
     ax.set_ylabel('Throughput (pkts rx / pkts tx)')
@@ -97,7 +89,7 @@ for i in range(1,len(allFiles)):
       y = []
       y_original_result = []
       for item in [a1 for a1 in a]:
-        if nodeSpeed == item[2] and nPeriodicUpdateInterval == item[0]:
+        if nodeSpeed == item[2] and probabilityOfRouteTableFailure == item[0]:
           x.append(item[1])
           y.append(item[3])
           print("originalDataMap.get("+str(item[1])+","+str(nodeSpeed)+")")
@@ -110,14 +102,13 @@ for i in range(1,len(allFiles)):
       print(y)
       print("y_original_result")
       print(y_original_result)
-      # lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with ' + str(nPeriodicUpdateInterval) + 's update pause interval'
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s'
-      l1 = ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
-      l2 = ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (default 15s periodic update interval)'
-      l3  = ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with route column corruption'
+      ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
+      ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with original DSDV implementation'
+      ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
       x_original = []
-      l4 = ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
+      ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
     print([x, y, y_original_result])
-plt.legend()
+#plt.legend()
 plt.show()
