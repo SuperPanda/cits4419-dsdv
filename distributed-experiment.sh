@@ -1,7 +1,7 @@
 experimentId=$1
 nodeId=$2
-echo "$experimentId-$nodeId"
-
+s=${speed[$nodeId]}
+echo "Running experiment $1 with node $nodeId using nodeSpeed $s"
 # Number of uncooperative nodes 
 declare -a experiment2=("5" "10" "15")
 # Probability of one random column corrupted in a node
@@ -14,7 +14,7 @@ declare -a cbrNodes=("1" "10" "20" "30" "40" "50")
 
 if [[ $experimentId -eq 2 ]]; 
 then
-  echo "Running experiment 2: Node speed of ${speed[$nodeId]}"
+  echo "Running experiment 2: Node speed of ${s}"
 fi
 
 exit
