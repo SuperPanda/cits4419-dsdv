@@ -2,6 +2,7 @@ experimentId=$1
 nodeId=$2
 nodeId=$nodeId-1
 echo "Running experiment $1 with node $nodeId using nodeSpeed $s"
+
 # Number of uncooperative nodes 
 declare -a experiment2=("5" "10" "15")
 # Probability of one random column corrupted in a node
