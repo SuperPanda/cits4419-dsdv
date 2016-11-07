@@ -11,11 +11,19 @@ cd <YOUR SCRATCH FOLDER>
 # Make sure this file has uncommented all experiments you want to run
 ./experiment.sh
 ```
+
 We have also provided scripts to allow distributed workloads when running experiments with more data points. Just run 
 ```
 ./distributed-experiment.sh <experiment number> <node number>
 ```
 Node number is currently set to a number between 1 and the length of the nodeSpeed parameter array (which is currently 3 elements long: 1m/s, 10m/s, 20m/s).
+
+### Building a new experiment
+In cits4419-dsdv directory, copy the pristine-experiment-skeleton folder to experiment#-name-of-experiment where # is the number of the experiment. In the new directory rename the pristine-experiment-skeleton.cc to be the name of the folder suffixed with '.cc'. This is importanted because WAF is setup to use the folder name in order to determine what function to run.
+
+Let us say it was experiment 6 named variable-settling-time, we now open experiment6-variable-settling-time.cc and modify the header includes; look for <NAME_OF_EXPERIMENT_DIRECTORY> in the header includes, and replace with the name of the experiment directory.
+
+You might want to look at experiment.sh for ways to automate running varying parameters. Also, any extra variables that are used for statistical purposes should be inserted into the output section at the end of the CaseRun function. Insert the parameter name at start where it reads "cbrNodes,nodeSpeed,throughput" (e.g. "settlingTime,cbrNodes,nodeSpeed,throughput"). Also don't forget to add the variable to the output stream. If the variable is not available in the scope of CaseRun, just add the parameter to the CaseRun function and pass it.
 
 ## DSDV Experiments
 See experiment.sh for commands used.
