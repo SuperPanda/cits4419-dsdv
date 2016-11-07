@@ -10,7 +10,7 @@ declare -a experiment3=("0.3" "0.4" "0.5")
 declare -a experiment5=("5" "10" "20" "25")
 
 declare -a speed=("1" "10" "20")
-declare -a cbrNodes=("1" "10" "20" "30" "40" "50")
+declare -a cbrNodes=("1" "10" "20" "30" "40")
 
 s=${speed[$nodeId]}
 echo "Running experiment $1 with node $nodeId using nodeSpeed $s"
@@ -27,7 +27,7 @@ then
     echo "** Experiment 1. Unmodified DSDV protocol (cbrNode=${n}, nodeSpeed=${s}) **"
     ./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     echo "** Experiment 1. DSDV protocol with only full updates (cbrNode=${n}, nodeSpeed=${s}) **"
-    ./../waf --run "full-updates-dsdv-experiment1 --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    ./../waf --run "experiment1-full-updates-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 fi
 
