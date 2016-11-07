@@ -68,7 +68,7 @@ print(originalDataMap)
 
 for i in range(1,len(allFiles)):
   setOfNodeSpeeds = set([a1[2] for a1 in a])
-  setOfUpdateIntervals = set([a1[0] for a1 in a if a1[0] != 0])
+  setOfSilentNodes = set([a1[0] for a1 in a if a1[0] != 0])
   # (cbrNodes,nodeSpeed) -> throughput
   subplot_id = 0
   l1 = None;
@@ -76,11 +76,9 @@ for i in range(1,len(allFiles)):
   l3 = None;
   l4 = None;
   # Start plotting
-  for nPeriodicUpdateInterval in setOfUpdateIntervals:
-    if (nPeriodicUpdateInterval == 15):
-      continue
+  for nPeriodicUpdateInterval in setOfSilentNodes:
     subplot_id += 1
-    ax = fig.add_subplot((len(setOfUpdateIntervals)-1)*10+100+subplot_id)
+    ax = fig.add_subplot(len(setOfSilentNodes)*10+100+subplot_id)
     ax.set_title("Throughput (periodic update interval: " + str(nPeriodicUpdateInterval) + "s)")
     #plt.title('Experiment 1: Throughput of unmodified DSDV protocol')
     ax.set_xlabel('Number of nodes generating CBR traffic')
@@ -111,10 +109,10 @@ for i in range(1,len(allFiles)):
       print("y_original_result")
       print(y_original_result)
       # lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s with ' + str(nPeriodicUpdateInterval) + 's update pause interval'
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s'
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (modified periodic update interval)'
       l1 = ax.plot(x,y,combinations[(line_id)%len(combinations)],label=lab)
       l2 = ax.plot(x,y,combinations[(line_id+3)%len(combinations)])
-      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s\n(default 15s periodic update interval)'
+      lab = 'Node Mobility Speed of ' + str(nodeSpeed) + 'm/s (default 15s periodic update interval)'
       l3  = ax.plot(x,y_original_result,combinations_original[line_id%len(combinations_original)],label=lab)
       x_original = []
       l4 = ax.plot(x,y_original_result,combinations_original[(line_id+3)%len(combinations_original)])   
