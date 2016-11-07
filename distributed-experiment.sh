@@ -1,7 +1,6 @@
 experimentId=$1
 nodeId=$2
-nodeId=$nodeId-1
-echo "Running experiment $1 with node $nodeId using nodeSpeed $s"
+nodeId=$(($nodeId-1))
 
 # Number of uncooperative nodes 
 declare -a experiment2=("5" "10" "15")
@@ -14,6 +13,7 @@ declare -a speed=("1" "10" "20")
 declare -a cbrNodes=("1" "10" "20" "30" "40" "50")
 
 s=${speed[$nodeId]}
+echo "Running experiment $1 with node $nodeId using nodeSpeed $s"
 
 if [[ $experimentId -eq 1 ]]; 
 then
