@@ -2,15 +2,19 @@ experimentId=$1
 nodeId=$2
 echo "$experimentId-$nodeId"
 
+# Number of uncooperative nodes 
 declare -a experiment2=("5" "10" "15")
-declare -a experiment3=("0.4" "0.5" "0.6")
-declare -a experiment5=("10" "15" "20")
-declare -a speed=("1" "10" "20")
-declare -a cbrNodes=("10" "20" "30")
+# Probability of one random column corrupted in a node
+declare -a experiment3=("0.3" "0.4" "0.5")
+# The update interval time
+declare -a experiment5=("5" "10" "20" "25")
 
-if [[ $experimentId -eq 1 ]]; 
+declare -a speed=("1" "10" "20")
+declare -a cbrNodes=("1" "10" "20" "30" "40" "50")
+
+if [[ $experimentId -eq 2 ]]; 
 then
-  echo "Running experiment 1"
+  echo "Running experiment 2: Node speed of ${speed[$nodeId]}"
 fi
 
 exit

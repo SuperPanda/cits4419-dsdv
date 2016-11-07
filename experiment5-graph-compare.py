@@ -24,7 +24,7 @@ fig = plt.figure()
 #ax = fig.add_subplot(111)
 
 dt = np.dtype([('periodicUpdateInterval',int),('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
-#dt_original = np.dtype([('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
+dt_original = np.dtype([('cbrNodes',int),('nodeSpeed',float),('throughput',float)])
 allFiles = [[join(d,f) for f in listdir(d) if isfile(join(d,f))] for d in listOfDirs]
 a = []
 for i in range(0,len(allFiles)):
@@ -32,11 +32,12 @@ for i in range(0,len(allFiles)):
   for f in fileList:
     print("loading " + f + "...")
     # periodicUpdateInterval, numCBRNodes, nodeSpeed, throughput
-    #if (i == 0):
-    #  b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt_original)
-    # a.append((0,b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
-    #else:
-    b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt)
+    if (i == 0):
+      b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt_original)
+      # 15s is default periodicUpdateInterval
+      a.append((15,b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
+    else:
+      b = np.genfromtxt(open(f,'r'),delimiter=",",skiprows=1, dtype=dt)
     a.append((b['periodicUpdateInterval'].item(0),b['cbrNodes'].item(0),b['nodeSpeed'].item(0),b['throughput'].item(0)))
   list.sort(a)
 
