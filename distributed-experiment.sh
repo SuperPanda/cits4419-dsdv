@@ -25,9 +25,9 @@ then
   for n in "${cbrNodes[@]}"
   do
     echo "** Experiment 1. Unmodified DSDV protocol (cbrNode=${n}, nodeSpeed=${s}) **"
-    #./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    ./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     echo "** Experiment 1. DSDV protocol with only full updates (cbrNode=${n}, nodeSpeed=${s}) **"
-    #./../waf --run "full-updates-dsdv-experiment1 --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    ./../waf --run "full-updates-dsdv-experiment1 --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 fi
 
@@ -43,7 +43,7 @@ then
     for n in "${cbrNodes[@]}"
     do
      echo "** Experiment 2. Disabled DSDV updates in ${i} nodes (cbrNode=${n}, nodeSpeed=${s}) **"
-     #./../waf --run "experiment2-disable-nodes-updating-dsdv --silentNodes=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}]-silentNode[${i}].stat --printRoutingTable"
+     ./../waf --run "experiment2-disable-nodes-updating-dsdv --silentNodes=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment2-disable-nodes-updating-cbrNodes[${n}]-nodeSpeed[${s}]-silentNode[${i}].stat --printRoutingTable"
     done
   done
 fi
@@ -61,7 +61,7 @@ then
     for n in "${cbrNodes[@]}"
     do
       echo "** Experiment 3: Ignore Route Table Column (rtCorruptionProbability=${i}, cbrNode=${n}, nodeSpeed=${s}) **"
-      #./../waf --run "experiment3-randomly-incomplete-routing-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-routing-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
+      ./../waf --run "experiment3-randomly-incomplete-routing-tables --rtCorruptionProbability=${i} --printRoutingTable --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment3-randomly-incomplete-routing-tables-cbrNodes[${n}]-nodeSpeed[${s}]-rtCorruptionProbability[${i}].stat"
     done
   done
 fi
@@ -76,7 +76,7 @@ then
   for n in "${cbrNodes[@]}"
   do
     echo "** Experiment 4. DSDV protocol ignore sequence number (cbrNode=${n}, nodeSpeed=${s}) **"
-    #./../waf --run "experiment4-ignore-seq-numbers --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment4-ignore-seq-numbers-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    ./../waf --run "experiment4-ignore-seq-numbers --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment4-ignore-seq-numbers-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 fi
 
@@ -92,7 +92,7 @@ then
     for n in "${cbrNodes[@]}"
     do
      echo "** Experiment 5. Finding optimal periodic update interval (periodicUpdateInterval=${i}, cbrNode=${n}, nodeSpeed=${s}) **"
-     #./../waf --run "experiment5-optimal-update-time --periodicUpdateInterval=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment5-optimal-update-time-cbrNodes[${n}]-nodeSpeed[${s}]-periodicUpdateInterval[${i}].stat --printRoutingTable"
+     ./../waf --run "experiment5-optimal-update-time --periodicUpdateInterval=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment5-optimal-update-time-cbrNodes[${n}]-nodeSpeed[${s}]-periodicUpdateInterval[${i}].stat --printRoutingTable"
     done
   done
 fi
