@@ -1,13 +1,14 @@
 ## WARNING: Not yet tested
 declare -a experiment2=("5" "10" "15")
 declare -a experiment3=("0.4" "0.5" "0.6")
+declare -a experiment5=("10" "15" "20")
 declare -a speed=("1" "10" "20")
 declare -a cbrNodes=("10" "20" "30")
 
 echo " "
 echo "=================================="
-echo "==        Experiment 1         =="
-echo "================================="
+echo "==        Experiment 1          =="
+echo "=================================="
 echo " "
 for s in "${speed[@]}"
 do
@@ -16,7 +17,7 @@ do
     echo "** Experiment 1. Unmodified DSDV protocol (cbrNode=${n}, nodeSpeed=${s}) **"
     #./../waf --run "unmodified-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-unmodified-cbrNodes[${n}]-nodeSpeed[${s}].stat"
     echo "** Experiment 1. DSDV protocol with only full updates (cbrNode=${n}, nodeSpeed=${s}) **"
-    #./../waf --run "experiment1-full-updates-dsdv --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
+    #./../waf --run "full-updates-dsdv-experiment1 --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment1-dsdv-full-updates-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 done
 
@@ -58,8 +59,8 @@ done
 
 echo " "
 echo "=================================="
-echo "==        Experiment 4          =="
-echo "=================================="
+echo "==        Experiment 4         =="
+echo "================================="
 echo " "
 for s in "${speed[@]}"
 do
@@ -69,6 +70,25 @@ do
     #./../waf --run "experiment4-ignore-seq-numbers --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment4-ignore-seq-numbers-cbrNodes[${n}]-nodeSpeed[${s}].stat"
   done
 done
+
+
+echo " "
+echo "================================="
+echo "==        Experiment 5         =="
+echo "================================="
+echo " "
+for i in "${experiment5[@]}"
+do
+  for s in "${speed[@]}"
+  do
+    for n in "${cbrNodes[@]}"
+    do
+     echo "** Experiment 5. Finding optimal periodic update interval (periodicUpdateInterval=${i}, cbrNode=${n}, nodeSpeed=${s}) **"
+     ./../waf --run "experiment5-optimal-update-time --periodicUpdateInterval=${i} --cbrNodes=${n} --nodeSpeed=${s} --statsFileName=experiment5-optimal-update-time-cbrNodes[${n}]-nodeSpeed[${s}]-periodicUpdateInterval[${i}].stat --printRoutingTable"
+    done
+  done
+done
+
 
 
 echo "Done!"

@@ -11,7 +11,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
-#include "scratch/<NAME_OF_EXPERIMENT_DIRECTORY>/dsdv-helper.h"
+#include "scratch/experiment5-optimal-update-time/dsdv-helper.h"
 #include <cmath>
 #include "ns3/flow-monitor-module.h"
 using namespace ns3;
@@ -280,8 +280,8 @@ DsdvManetExperiment::CaseRun (uint32_t nWifis, uint32_t nSinks, double totalTime
 
   // Output File
   std::ofstream out (statsFileName.c_str ());
-  out << "cbrNodes,nodeSpeed,throughput" << std::endl;
-  out << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
+  out << "periodicUpdateInterval,cbrNodes,nodeSpeed,throughput" << std::endl;
+  out <<  periodicUpdateInterval << "," << nSinks << "," << nodeSpeed << "," << ((float) nRxPkts / (float) nTxPkts) << std::endl;
   out.close ();
 
   Simulator::Destroy ();
