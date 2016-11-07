@@ -40,12 +40,15 @@ In XYZ's [Add citation here] paper, there was called for further research into f
 
 ## Results from the small-scale experiments
 ### Experiment 1. Full updates only
-![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment1-results.png?raw=true)
+![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment1-results.png?raw=true)
 ### Experiment 2. Effects of Greedy Nodes
 ![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment2-results.png?raw=true)
+TODO: Crop results-higher-resolution/experiment2-results-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment2-results-no-legend.png
 ### Experiment 3. Effects of Incomplete Route Table Information
 ![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment3-results.png?raw=true)
+TODO: Crop results-higher-resolution/experiment3-results-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment3-results-no-legend.png
 ### Experiment 4. Effects of Ignoring the Sequence Numbers
-![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment4-results.png?raw=true)
+![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment4-results.png?raw=true)
 ### Experiment 5. Search for optimal periodic update period value
 ![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment5-results.png?raw=true)
+TODO: Crop results-higher-resolution/experiment5-results-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment5-results-no-legend.png
