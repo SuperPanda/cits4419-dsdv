@@ -42,13 +42,13 @@ In XYZ's [Add citation here] paper, there was called for further research into f
 ### Experiment 1. Full updates only
 ![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment1.png?raw=true)
 ### Experiment 2. Effects of Greedy Nodes
-![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment2-results.png?raw=true)
-TODO: Crop results-higher-resolution/experiment2-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment2-no-legend.png
+![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment2-no-legend.png?raw=true)
+![Legend](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment2-legend-only.png?raw=true)
 ### Experiment 3. Effects of Incomplete Route Table Information
-![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment3-results.png?raw=true)
-TODO: Crop results-higher-resolution/experiment3-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment3-no-legend.png
+![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment3-no-legend.png?raw=true)
+![Legend](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment3-legend-only.png?raw=true)
 ### Experiment 4. Effects of Ignoring the Sequence Numbers
 ![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment4.png?raw=true)
 ### Experiment 5. Search for optimal periodic update period value
-![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results/experiment5-results.png?raw=true)
-TODO: Crop results-higher-resolution/experiment5-legend.png and replace the above image with the legend graphic, and results-higher-resolution/experiment5-no-legend.png
+![Results](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment5-no-legend.png?raw=true)
+![Legend](https://github.com/SuperPanda/cits4419-dsdv/blob/master/results-higher-resolution/experiment25-legend-only.png?raw=true)
